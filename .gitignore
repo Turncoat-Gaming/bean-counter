@@ -1,0 +1,14 @@
+# Sandbox / harness metadata (not project content)
+.claudebox
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/
+
+# Node only ever runs the dev-only data-gen script with zero deps —
+# there is no package.json and no install, but guard against accidents.
+node_modules/
+npm-debug.log*

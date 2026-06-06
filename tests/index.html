@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>bean-counter — tests</title>
+  <link rel="stylesheet" href="../src/styles.css" />
+  <style>
+    .ok { color: #6bdc8a; } .fail { color: var(--error); }
+    li { font-family: ui-monospace, monospace; }
+  </style>
+</head>
+<body>
+  <header class="topbar"><h1>bean-counter · tests</h1></header>
+  <main>
+    <section class="panel"><ul id="out"></ul><p id="summary"></p></section>
+  </main>
+  <script type="module">
+    import { tests } from './engine.test.js';
+    const out = document.querySelector('#out');
+    let failed = 0;
+    for (const [name, fn] of tests) {
+      const li = document.createElement('li');
+      try { fn(); li.className = 'ok'; li.textContent = `ok   ${name}`; }
+      catch (err) { failed++; li.className = 'fail'; li.textContent = `FAIL ${name} — ${err.message}`; }
+      out.append(li);
+    }
+    const s = document.querySelector('#summary');
+    s.textContent = failed ? `${failed} failing` : `${tests.length} passing`;
+    s.className = failed ? 'fail' : 'ok';
+  </script>
+</body>
+</html>

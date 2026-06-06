@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>bean-counter — data importer</title>
+  <link rel="stylesheet" href="../src/styles.css" />
+</head>
+<body>
+  <header class="topbar"><h1>bean-counter · data importer</h1></header>
+  <main>
+    <section class="panel">
+      <p class="muted">
+        Convert a Satisfactory <code>Docs.json</code> export into a bean-counter
+        dataset. Everything runs in your browser — nothing is uploaded. The file
+        is normally <code>Docs/en-US.json</code> in your game install and is
+        UTF-16 encoded; that's handled for you.
+      </p>
+      <div class="field">
+        <label for="version">Game version (e.g. 1.2)</label>
+        <input id="version" type="text" value="1.2" />
+      </div>
+      <div class="field">
+        <label for="file">Docs.json file</label>
+        <input id="file" type="file" accept=".json" />
+      </div>
+      <p id="status" class="muted" aria-live="polite"></p>
+      <div class="row" style="display:flex; gap:.5rem">
+        <button id="download" type="button" disabled>Download recipes.json</button>
+      </div>
+      <p class="muted" style="margin-top:1rem">
+        Save the download to <code>src/data/&lt;version&gt;/recipes.json</code> and
+        commit it. (Maintainers can equivalently run
+        <code>node tools/gen-data.mjs &lt;version&gt;</code> — same code, same bytes.)
+      </p>
+    </section>
+  </main>
+
+  <script type="module">
+    import { normalizeDocs } from '../src/data/normalize.js';
+
+    const fileEl = document.querySelector('#file');
+    const versionEl = document.querySelector('#version');
+    const statusEl = document.querySelector('#status');
+    const downloadBtn = document.querySelector('#download');
+    let blobUrl = null;
+
+    fileEl.addEventListener('change', async () => {
+      const file = fileEl.files[0];
+      if (!file) return;
+      statusEl.textContent = 'Reading…';
+      downloadBtn.disabled = true;
+      try {
+        const buf = await file.arrayBuffer();
+        // Satisfactory exports UTF-16LE with a BOM.
+        const text = new TextDecoder('utf-16le').decode(buf);
+        const docs = JSON.parse(text);
+        const dataset = normalizeDocs(docs, { gameVersion: versionEl.value.trim() });
+        const json = JSON.stringify(dataset, null, 1) + '\n';
+
+        if (blobUrl) URL.revokeObjectURL(blobUrl);
+        blobUrl = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+        downloadBtn.disabled = false;
+        statusEl.textContent =
+          `OK — ${Object.keys(dataset.items).length} items, ` +
+          `${Object.keys(dataset.buildings).length} buildings, ` +
+          `${Object.keys(dataset.recipes).length} recipes.`;
+      } catch (err) {
+        statusEl.innerHTML = `<span class="error">Failed: ${err.message}</span>`;
+      }
+    });
+
+    downloadBtn.addEventListener('click', () => {
+      if (!blobUrl) return;
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = 'recipes.json';
+      a.click();
+    });
+  </script>
+</body>
+</html>
