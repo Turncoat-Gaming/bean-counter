@@ -19,10 +19,19 @@
 
   <footer class="footer">
     A personal <a href="https://www.satisfactorygame.com/" rel="noreferrer">Satisfactory</a>
-    planner. Runs entirely in your browser. ·
+    planner. Runs entirely in your browser — clone it and open this file. ·
     <a href="https://github.com/Turncoat-Gaming/bean-counter" rel="noreferrer">source</a>
   </footer>
 
-  <script type="module" src="src/main.js"></script>
+  <!-- Classic scripts + script-loaded data: no ES modules, no fetch(), so this
+       page runs directly from the filesystem (file://). Order matters: engine,
+       then data, then UI, then bootstrap. Add a new dataset's recipes.js here. -->
+  <script src="src/engine/calculator.js"></script>
+  <script src="src/engine/plan-codec.js"></script>
+  <script src="src/engine/dataset.js"></script>
+  <script src="src/data/versions.js"></script>
+  <script src="src/data/1.2/recipes.js"></script>
+  <script src="src/ui/rate-calculator.js"></script>
+  <script src="src/main.js"></script>
 </body>
 </html>

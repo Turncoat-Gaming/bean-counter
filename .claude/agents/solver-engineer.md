@@ -9,7 +9,9 @@ Scope:
 - `src/engine/**` (`calculator.js`, `dataset.js`, `plan-codec.js`) and `tests/**`.
 
 Principles:
-- **Purity:** no DOM and no I/O beyond `fetch` for datasets. UI never leaks in here.
+- **Purity:** no DOM and no I/O. UI never leaks in here. Each file is an IIFE that
+  hangs its API off the `BeanCounter` global (classic script, no ES modules) and
+  also CommonJS-exports for the Node test runner.
 - Per-minute rates are derived as `amount * 60 / time`; `outputs[0]` is the primary
   product, the rest are byproducts. Power is `machines * building.power` (overclock
   and variable-power machines are future work — keep hooks clean).

@@ -2,23 +2,25 @@
 
 A personal [Satisfactory](https://www.satisfactorygame.com/) production planner.
 Plenty of great planners exist — this one is mine. It runs **entirely in your
-browser**: no backend, no accounts, no build step, no npm. Same input, same
-results, anywhere.
+browser** with **no backend, no accounts, no build step, and no npm**. Same
+input, same results, anywhere.
 
 ## Run it
 
-Cross-file ES modules can't load over `file://`, so serve the folder with any
-static server and open it:
+**Clone the repo and open `index.html` — double-click it.** That's it. It works
+straight from the filesystem, offline. No server, no tooling.
 
 ```sh
-# Python (ships with most systems)
-python3 -m http.server 8000
-# then open http://localhost:8000/
-
-# …or any other static server you like.
+git clone https://github.com/Turncoat-Gaming/bean-counter.git
+# then open bean-counter/index.html in your browser
 ```
 
-Or just use the hosted copy via GitHub Pages (if enabled for this repo).
+It's also a plain static site, so you can host it anywhere (GitHub Pages, an
+nginx box, a NAS share) by serving the files as-is.
+
+> It uses classic `<script>` tags and script-loaded data specifically so it runs
+> over `file://` — no ES modules or `fetch()`, which browsers block from the
+> filesystem.
 
 ## What it does (today)
 
@@ -34,35 +36,40 @@ recipe selection, and multi-line plans.
 ## Project layout
 
 ```
-index.html            app shell
+index.html            app shell; loads the scripts below in order
 src/
   main.js             bootstrap + version selector
   ui/                 views (DOM only)
-  engine/             pure, deterministic math (no DOM, no I/O beyond fetch)
+  engine/             pure, deterministic math (no DOM, no I/O)
   data/
     SCHEMA.md         dataset schema
-    versions.json     available game-data versions
+    versions.js       available game-data versions
     normalize.js      Docs.json -> dataset (shared by importer + gen script)
-    <version>/recipes.json   generated dataset (committed)
+    <version>/recipes.js   generated dataset, self-registering (committed)
 tools/
-  import.html         in-browser Docs.json -> recipes.json importer
-  gen-data.mjs        equivalent dev-only Node bootstrap (zero deps)
+  import.html         in-browser Docs.json -> recipes.js importer
+  gen-data.js         equivalent dev-only Node bootstrap (zero deps)
 tests/                browser + Node test runner (no framework)
 resources/gamedata/   raw Docs.json exports (provenance for the datasets)
 ```
 
+Everything hangs off a single global, `BeanCounter` (e.g. `BeanCounter.calculator`,
+`BeanCounter.datasets["1.2"]`), so files compose without modules.
+
 ## Updating game data
 
-The dataset is generated from the game's `Docs.json` export
+Datasets are generated from the game's `Docs.json` export
 (`…/Satisfactory/CommunityResources/Docs/en-US.json`, UTF-16 encoded). Two
 equivalent paths — both run the **same** `normalize.js`:
 
 1. **In the browser:** open `tools/import.html`, choose the version + file, and
-   download `recipes.json` into `src/data/<version>/`.
+   download `recipes.js` into `src/data/<version>/`.
 2. **Maintainers:** drop the export at `resources/gamedata/<version>/docs.en-us.json`
-   and run `node tools/gen-data.mjs <version>`.
+   and run `node tools/gen-data.js <version>`.
 
-Then add the version to `src/data/versions.json`.
+Then add the version to `src/data/versions.js` and reference its `recipes.js`
+from `index.html`. (Node here is a dev-only convenience with zero dependencies —
+it is not required to run the app.)
 
 ## Tests
 
@@ -72,7 +79,8 @@ node tests/engine.test.js     # or open tests/index.html in a browser
 
 ## Principles
 
-- **Client-side only.** No backend, no secrets, no npm install to run it.
+- **Client-side only.** No backend, no secrets, nothing to install to run it.
+- **Runs from the filesystem.** Clone and double-click; no server required.
 - **Supply-chain-conscious.** Default to zero runtime dependencies. Any
   third-party library must be vendored or pinned with Subresource Integrity.
 - **Deterministic.** Generated data is byte-stable; same input → same output.

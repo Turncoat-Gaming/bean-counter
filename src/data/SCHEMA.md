@@ -1,13 +1,23 @@
 # Dataset schema
 
-A dataset is one JSON file per game version at `src/data/<version>/recipes.json`,
+A dataset is one file per game version at `src/data/<version>/recipes.js`,
 generated from the game's `Docs.json` by `normalize.js` (via the in-browser
-importer `tools/import.html`, or equivalently `node tools/gen-data.mjs <version>`).
+importer `tools/import.html`, or equivalently `node tools/gen-data.js <version>`).
+
+The file is a thin classic-script wrapper that registers the dataset on the
+global so it loads over `file://`:
+
+```js
+(function (BC) {
+  BC.datasets = BC.datasets || {};
+  BC.datasets["1.2"] = { /* the object below */ };
+})(globalThis.BeanCounter = globalThis.BeanCounter || {});
+```
 
 Output is **deterministic**: keys are sorted and there are no timestamps, so the
 same `Docs.json` + version always produces byte-identical output.
 
-## Shape
+## Shape (the registered object)
 
 ```jsonc
 {

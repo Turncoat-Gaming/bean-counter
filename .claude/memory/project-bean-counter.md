@@ -10,11 +10,15 @@ metadata:
 **bean-counter** (repo: Turncoat-Gaming/bean-counter) is the user's personal
 Satisfactory production planner. Many planners exist; this is their own take.
 
-Pure client-side HTML + home-grown ES modules, no backend, runnable by serving
-the folder statically (ES modules don't load over `file://`; GitHub Pages is the
-hosted path). Architecture: pure `src/engine/**` (math, tested), thin `src/ui/**`
-(DOM), versioned datasets at `src/data/<version>/recipes.json` generated from the
-game's `Docs.json` by the shared `src/data/normalize.js`.
+Pure client-side HTML, no backend. Deliberately uses **classic `<script>` tags +
+a single `BeanCounter` global (NOT ES modules)** and self-registering
+`recipes.js` data scripts (NOT `fetch`/JSON) so it **runs straight from the
+filesystem — clone and double-click `index.html`**. The user explicitly wanted
+clone-and-run with zero tooling; that's why ES modules were dropped. Also a plain
+static site, so it can be hosted anywhere (their own NAS/kube/CI-CD). Architecture:
+pure `src/engine/**` (math, tested), thin `src/ui/**` (DOM), versioned datasets at
+`src/data/<version>/recipes.js` generated from the game's `Docs.json` by the
+shared `src/data/normalize.js`.
 
 MVP shipped first cut: **rate calculator** (recipe + target rate → machines,
 inputs, byproducts, power) and **bookmark save/load** (reversible base64url plan

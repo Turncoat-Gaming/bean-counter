@@ -19,4 +19,6 @@ secrets — public repo.
 **How to apply:** reach for built-in browser/JS APIs first (`TextDecoder`,
 `btoa`, `fetch`, etc.). No external fonts/CSS/JS from CDNs. A minify/compile step
 is allowed but optional. Node is dev-only (zero-dep scripts like
-`tools/gen-data.mjs`), never shipped, no `package.json`.
+`tools/gen-data.js`), never shipped, no `package.json`. The app uses classic
+`<script>` tags (not ES modules) so it runs from `file://` — see
+[[project-bean-counter]].

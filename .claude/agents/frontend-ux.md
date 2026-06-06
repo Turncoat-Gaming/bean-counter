@@ -15,7 +15,8 @@ Principles:
 - **No external fonts, CSS, or JS from CDNs** (supply-chain hygiene). System fonts
   and hand-written CSS only, unless a dependency is vendored/SRI-pinned per the
   project directives.
-- Vanilla ES modules — no framework unless the project explicitly adopts one.
+- Classic `<script>` tags + the `BeanCounter` global — **no ES modules** (the app
+  must run over `file://`) and no framework unless explicitly adopted.
 - Keep it accessible and responsive: labelled controls, `aria-live` for results,
   works on a phone. The plan must always stay reflected in the shareable bookmark
   + URL hash.
