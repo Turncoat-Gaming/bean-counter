@@ -28,8 +28,8 @@ nginx box, a NAS share) by serving the files as-is.
   chain down to raw resources. You get an **indented production tree** (so you can
   see where each branch's demand goes — e.g. screws for the plate vs. screws for
   the frame), plus an **aggregated totals table**, raw-resource draw, gross
-  byproducts, and a per-building roll-up. (Toggle to **Single step** for just the
-  one recipe.)
+  byproducts, and a per-building roll-up. Tree nodes are collapsible. (Toggle to
+  **Single step** for just the one recipe.)
 - **Per-step alternate selection** — any node in the tree that has alternate
   recipes shows an inline picker, so you can swap a recipe deep in the chain and
   watch the whole plan re-solve. Choice is per item (it applies wherever that item

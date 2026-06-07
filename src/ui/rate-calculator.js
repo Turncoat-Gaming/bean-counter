@@ -53,6 +53,7 @@
     let choices = {};         // per-step override: item -> recipeKey (deep alternates)
     let targetItem = null;    // product of `active`, set during chain render
     let bookmarkChoiceKeys = []; // choices actually used by the current chain
+    let collapsedPaths = new Set(); // tree nodes the user has collapsed (by path)
 
     for (const [key, recipe] of data.pickerRecipes(dataset)) {
       const opt = document.createElement('option');
@@ -117,20 +118,29 @@
     }
 
     // One node of the production tree (nested <ul> gives the indentation).
-    function treeNode(node) {
-      if (node.raw) {
-        return '<li><div class="node"><span class="raw-tag">raw</span> ' +
+    // `path` is the unique route from the root, so collapse state survives
+    // re-renders and applies to the right occurrence of a shared item.
+    function treeNode(node, path) {
+      const hasKids = node.children && node.children.length;
+      const toggle = hasKids
+        ? '<button type="button" class="tree-toggle" data-path="' + esc(path) + '" aria-label="Collapse or expand"></button>'
+        : '<span class="tree-toggle empty"></span>';
+
+      const body = node.raw
+        ? toggle + '<span class="raw-tag">raw</span> ' +
           '<span class="item">' + esc(itemName(node.item)) + '</span> ' +
-          '<span class="rate">' + fmt(node.rate) + '/min</span></div></li>';
-      }
-      let html = '<li><div class="node">' +
-        '<span class="mach">' + fmt(node.machines) + '×</span> ' +
-        '<span class="bld">' + esc(node.buildingName) + '</span> ' +
-        '<span class="item">' + esc(itemName(node.item)) + '</span> ' +
-        '<span class="rate">' + fmt(node.rate) + '/min</span> ' +
-        recipeCell(node) + '</div>';
-      if (node.children && node.children.length) {
-        html += '<ul>' + node.children.map(treeNode).join('') + '</ul>';
+          '<span class="rate">' + fmt(node.rate) + '/min</span>'
+        : toggle +
+          '<span class="mach">' + fmt(node.machines) + '×</span> ' +
+          '<span class="bld">' + esc(node.buildingName) + '</span> ' +
+          '<span class="item">' + esc(itemName(node.item)) + '</span> ' +
+          '<span class="rate">' + fmt(node.rate) + '/min</span> ' +
+          recipeCell(node);
+
+      const collapsed = hasKids && collapsedPaths.has(path);
+      let html = '<li class="' + (collapsed ? 'collapsed' : '') + '"><div class="node">' + body + '</div>';
+      if (hasKids) {
+        html += '<ul>' + node.children.map((c) => treeNode(c, path + '>' + c.item)).join('') + '</ul>';
       }
       return html + '</li>';
     }
@@ -151,7 +161,7 @@
         .map(([k, m]) => fmt(m) + '× ' + esc(data.buildingName(dataset, k)))
         .join(' · ');
 
-      const tree = '<ul class="tree">' + treeNode(sol.tree) + '</ul>';
+      const tree = '<ul class="tree">' + treeNode(sol.tree, sol.tree.item) + '</ul>';
 
       const rows = sol.steps.map((s) =>
         '<tr>' +
@@ -245,6 +255,13 @@
       if (data.defaultRecipeKey(dataset, item) === key) delete choices[item]; // back to default
       else choices[item] = key;
       render();
+    });
+    // Collapse/expand a tree node (no re-solve needed — just toggle the class).
+    resultEl.addEventListener('click', (e) => {
+      const t = e.target.closest('.tree-toggle');
+      if (!t || t.classList.contains('empty')) return;
+      const collapsed = t.closest('li').classList.toggle('collapsed');
+      if (collapsed) collapsedPaths.add(t.dataset.path); else collapsedPaths.delete(t.dataset.path);
     });
     modesEl.addEventListener('click', (e) => {
       const btn = e.target.closest('.mode');

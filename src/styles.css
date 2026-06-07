@@ -38,7 +38,9 @@ body {
   color: var(--accent);
 }
 
-main { max-width: 720px; margin: 1.5rem auto; padding: 0 1rem; display: grid; gap: 1rem; }
+/* The result (tree + tables) can use a wide screen; inputs stay readable. */
+main { max-width: min(1320px, 96vw); margin: 1.5rem auto; padding: 0 1rem; display: grid; gap: 1rem; }
+#calc-form, .bookmark { max-width: 760px; }
 
 .panel {
   background: var(--panel);
@@ -130,6 +132,26 @@ button:hover { filter: brightness(1.05); }
 .node .raw-tag { color: var(--muted); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; }
 .tree-note { font-size: 0.8rem; margin: 0 0 0.5rem; }
 
+/* collapse/expand toggles */
+.tree-toggle {
+  flex: 0 0 1.1rem;
+  width: 1.1rem;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 0.75rem;
+  line-height: 1;
+  text-align: center;
+  align-self: center;
+}
+.tree-toggle.empty { cursor: default; }
+.tree-toggle:not(.empty)::before { content: '▾'; }
+.tree-toggle:hover:not(.empty) { color: var(--accent); }
+.tree li.collapsed > .node > .tree-toggle:not(.empty)::before { content: '▸'; }
+.tree li.collapsed > ul { display: none; }
+
 .steps-wrap { overflow-x: auto; }
 .steps { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 .steps th {
@@ -143,6 +165,7 @@ button:hover { filter: brightness(1.05); }
   border-bottom: 1px solid #2c3240;
   white-space: nowrap;
 }
+.steps td, .steps th { white-space: nowrap; } /* each row on one line; .steps-wrap scrolls if it overflows */
 .steps td { padding: 0.3rem 0.6rem; vertical-align: middle; }
 .steps tbody tr:hover td { background: rgba(255, 255, 255, 0.02); }
 /* content-width columns; the Item column takes the slack */
@@ -174,7 +197,7 @@ button:hover { filter: brightness(1.05); }
 .testlist .fail, .summary.fail { color: var(--error); }
 
 .footer {
-  max-width: 720px;
+  max-width: min(1320px, 96vw);
   margin: 2rem auto;
   padding: 0 1rem;
   color: var(--muted);
