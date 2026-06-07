@@ -62,6 +62,33 @@ select, input[type="number"], input[type="text"] {
 }
 #calc-form { display: grid; gap: 0.9rem; grid-template-columns: 2fr 1fr; }
 
+/* recipe variant selector (alternates) */
+.variants { grid-column: 1 / -1; }
+.variants[hidden] { display: none; }
+.variants-head { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.45rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.chip {
+  background: var(--panel-2);
+  color: var(--ink);
+  font-weight: 500;
+  border: 1px solid #38404f;
+  padding: 0.35rem 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.chip:hover { filter: none; border-color: var(--accent); }
+.chip.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.chip .tag {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: rgba(0, 0, 0, 0.18);
+  padding: 0.05rem 0.32rem;
+  border-radius: 4px;
+}
+.chip.active .tag { background: rgba(0, 0, 0, 0.25); }
+
 button {
   background: var(--accent);
   color: var(--accent-ink);

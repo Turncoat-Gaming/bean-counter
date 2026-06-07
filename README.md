@@ -26,6 +26,8 @@ nginx box, a NAS share) by serving the files as-is.
 
 - **Rate calculator** — pick a recipe and a target output rate; get the machine
   count, input rates, byproducts, and power draw.
+- **Alternate recipes** — the picker stays uncluttered (alternates hidden); when a
+  recipe has alternates, a variant selector appears so you can switch between them.
 - **Bookmarks** — every plan encodes into a short string that also lives in the
   URL. Copy the link (or the string) to save or share a plan; paste it to
   restore. Fully client-side, reversible, no server.

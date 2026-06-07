@@ -10,11 +10,13 @@
   if (typeof require === 'function' && typeof module === 'object') {
     require('../src/engine/calculator.js');
     require('../src/engine/plan-codec.js');
+    require('../src/engine/dataset.js');
   }
 
   const BC = globalThis.BeanCounter;
   const { perMachineRates, computeRecipePlan } = BC.calculator;
   const { encodePlan, decodePlan } = BC.codec;
+  const data = BC.data;
 
   // A tiny self-contained fixture so tests don't depend on the generated dataset.
   const dataset = {
@@ -86,7 +88,48 @@
       try { decodePlan('not-a-bookmark'); } catch (e) { threw = true; }
       assertEqual(threw, true);
     }],
+
+    // --- alternate-recipe grouping ---
+    ['picker hides alternates but keeps orphan-only products', function () {
+      const keys = data.pickerRecipes(altFixture).map(([k]) => k);
+      assertEqual(keys.includes('Recipe_IngotIron_C'), true);   // standard shown
+      assertEqual(keys.includes('Recipe_Alternate_PureIron_C'), false); // alt hidden
+      assertEqual(keys.includes('Recipe_CoalIron_C'), true);    // both standards shown
+      assertEqual(keys.includes('Recipe_CoalLime_C'), true);
+      assertEqual(keys.includes('Recipe_Alternate_PolymerResin_C'), true); // orphan kept
+    }],
+    ['variants group by product, standard first', function () {
+      const v = data.variantsForRecipe(altFixture, 'Recipe_IngotIron_C');
+      assertEqual(v.length, 3);
+      assertEqual(v[0], 'Recipe_IngotIron_C');          // standard leads
+      assertEqual(data.alternateCount(altFixture, 'Recipe_IngotIron_C'), 2);
+    }],
+    ['representative of an alternate is its standard', function () {
+      assertEqual(data.representativeKey(altFixture, 'Recipe_Alternate_PureIron_C'), 'Recipe_IngotIron_C');
+      assertEqual(data.representativeKey(altFixture, 'Recipe_CoalLime_C'), 'Recipe_CoalLime_C');
+      assertEqual(data.representativeKey(altFixture, 'Recipe_Alternate_PolymerResin_C'), 'Recipe_Alternate_PolymerResin_C');
+    }],
   ];
+
+  // Fixture exercising standard+alternate, multi-standard, and orphan-alt cases.
+  const altFixture = {
+    gameVersion: 'test',
+    items: {
+      Desc_IronIngot_C: { name: 'Iron Ingot', form: 'solid' },
+      Desc_Coal_C: { name: 'Coal', form: 'solid' },
+      Desc_PolymerResin_C: { name: 'Polymer Resin', form: 'solid' },
+      Desc_X_C: { name: 'X', form: 'solid' },
+    },
+    buildings: { B_C: { name: 'B', power: 1 } },
+    recipes: {
+      Recipe_IngotIron_C: { name: 'Iron Ingot', time: 2, building: 'B_C', alternate: false, inputs: [], outputs: [{ item: 'Desc_IronIngot_C', amount: 1 }] },
+      Recipe_Alternate_PureIron_C: { name: 'Alternate: Pure Iron Ingot', time: 2, building: 'B_C', alternate: true, inputs: [], outputs: [{ item: 'Desc_IronIngot_C', amount: 1 }] },
+      Recipe_Alternate_BasicIron_C: { name: 'Alternate: Basic Iron Ingot', time: 2, building: 'B_C', alternate: true, inputs: [], outputs: [{ item: 'Desc_IronIngot_C', amount: 1 }] },
+      Recipe_CoalIron_C: { name: 'Coal (Iron)', time: 2, building: 'B_C', alternate: false, inputs: [], outputs: [{ item: 'Desc_Coal_C', amount: 1 }] },
+      Recipe_CoalLime_C: { name: 'Coal (Limestone)', time: 2, building: 'B_C', alternate: false, inputs: [], outputs: [{ item: 'Desc_Coal_C', amount: 1 }] },
+      Recipe_Alternate_PolymerResin_C: { name: 'Alternate: Polymer Resin', time: 2, building: 'B_C', alternate: true, inputs: [], outputs: [{ item: 'Desc_PolymerResin_C', amount: 1 }] },
+    },
+  };
 
   BC.tests = tests; // browser runner (tests/index.html) reads this
 

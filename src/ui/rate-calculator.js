@@ -11,8 +11,11 @@
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+  // Drop the "Alternate: " prefix for display — the "alt" tag carries that info.
+  const variantLabel = (name) => name.replace(/^Alternate:\s*/, '');
+
   function mountRateCalculator(root, dataset) {
-    const { recipeList, itemName } = BC.data;
+    const data = BC.data;
     const { computeRecipePlan, primaryOutput, perMachineRates } = BC.calculator;
     const { encodePlan, decodePlan } = BC.codec;
 
@@ -21,6 +24,7 @@
       '  <div class="field"><label for="recipe">Recipe</label><select id="recipe"></select></div>' +
       '  <div class="field"><label for="rate">Target output (per min)</label>' +
       '    <input id="rate" type="number" min="0" step="any" value="60" /></div>' +
+      '  <div id="variants" class="variants" hidden></div>' +
       '</form>' +
       '<section id="result" class="panel result" aria-live="polite"></section>' +
       '<section class="panel bookmark">' +
@@ -31,24 +35,51 @@
 
     const recipeSel = root.querySelector('#recipe');
     const rateInput = root.querySelector('#rate');
+    const variantsEl = root.querySelector('#variants');
     const resultEl = root.querySelector('#result');
     const bookmarkEl = root.querySelector('#bookmark');
 
-    for (const [key, recipe] of recipeList(dataset)) {
+    // The currently active recipe (may be an alternate, even though the dropdown
+    // shows its standard representative).
+    let active = null;
+
+    // Populate the picker (alternates suppressed). Flag entries that have alternates.
+    for (const [key, recipe] of data.pickerRecipes(dataset)) {
       const opt = document.createElement('option');
       opt.value = key;
       const per = perMachineRates(recipe).outputs[0].rate;
-      opt.textContent = recipe.name + ' — ' + fmt(per) + '/min ' + itemName(dataset, primaryOutput(recipe).item);
+      const altN = data.alternateCount(dataset, key);
+      opt.textContent =
+        recipe.name + ' — ' + fmt(per) + '/min ' + data.itemName(dataset, primaryOutput(recipe).item) +
+        (altN ? '  (+' + altN + ' alt)' : '');
       recipeSel.append(opt);
     }
 
+    function renderVariants() {
+      const variants = data.variantsForRecipe(dataset, active);
+      if (variants.length <= 1) { variantsEl.hidden = true; variantsEl.innerHTML = ''; return; }
+
+      const altN = data.alternateCount(dataset, active);
+      const head = variants.length + ' recipes' +
+        (altN ? ' · ' + altN + ' alternate' + (altN > 1 ? 's' : '') : '');
+
+      let html = '<div class="variants-head">' + head + '</div><div class="chips">';
+      for (const k of variants) {
+        const r = dataset.recipes[k];
+        const tag = r.alternate ? '<span class="tag">alt</span>' : '';
+        html += '<button type="button" class="chip' + (k === active ? ' active' : '') + '"' +
+          ' data-key="' + esc(k) + '">' + tag + esc(variantLabel(r.name)) + '</button>';
+      }
+      variantsEl.innerHTML = html + '</div>';
+      variantsEl.hidden = false;
+    }
+
     function render() {
-      const recipeKey = recipeSel.value;
       const targetRate = Number(rateInput.value) || 0;
-      const plan = computeRecipePlan(dataset, recipeKey, targetRate);
+      const plan = computeRecipePlan(dataset, active, targetRate);
 
       const flows = (list) =>
-        list.map((f) => '<li><span>' + fmt(f.rate) + '/min</span> ' + esc(itemName(dataset, f.item)) + '</li>').join('');
+        list.map((f) => '<li><span>' + fmt(f.rate) + '/min</span> ' + esc(data.itemName(dataset, f.item)) + '</li>').join('');
 
       resultEl.innerHTML =
         '<div class="headline"><strong>' + fmt(plan.machines) + '</strong> × ' + esc(plan.buildingName) +
@@ -58,9 +89,17 @@
         '<div><h3>Byproducts</h3><ul>' + (flows(plan.byproducts) || '<li class="muted">none</li>') + '</ul></div>' +
         '</div>';
 
-      const bookmark = encodePlan({ version: dataset.gameVersion, entries: [{ recipeKey, targetRate }] });
+      const bookmark = encodePlan({ version: dataset.gameVersion, entries: [{ recipeKey: active, targetRate }] });
       bookmarkEl.value = bookmark;
       history.replaceState(null, '', '#' + bookmark);
+    }
+
+    // Make `key` the active recipe: sync the dropdown to its representative, redraw.
+    function setActive(key) {
+      active = key;
+      recipeSel.value = data.representativeKey(dataset, key);
+      renderVariants();
+      render();
     }
 
     function restoreFromHash() {
@@ -69,26 +108,30 @@
       try {
         const first = decodePlan(hash).entries[0];
         if (first && dataset.recipes[first.recipeKey]) {
-          recipeSel.value = first.recipeKey;
           rateInput.value = first.targetRate;
+          setActive(first.recipeKey);
           return true;
         }
       } catch (e) { /* not ours / malformed — ignore */ }
       return false;
     }
 
-    recipeSel.addEventListener('change', render);
+    // Changing the dropdown picks that (standard) recipe; alternates reset to it.
+    recipeSel.addEventListener('change', () => setActive(recipeSel.value));
     rateInput.addEventListener('input', render);
+    variantsEl.addEventListener('click', (e) => {
+      const chip = e.target.closest('.chip');
+      if (chip) setActive(chip.dataset.key);
+    });
     bookmarkEl.addEventListener('change', () => {
       location.hash = bookmarkEl.value.trim();
-      if (restoreFromHash()) render();
+      restoreFromHash();
     });
     root.querySelector('#copy').addEventListener('click', async () => {
       try { await navigator.clipboard.writeText(bookmarkEl.value); } catch (e) { bookmarkEl.select(); }
     });
 
-    restoreFromHash();
-    render();
+    if (!restoreFromHash()) setActive(recipeSel.value);
   }
 
   BC.ui = BC.ui || {};

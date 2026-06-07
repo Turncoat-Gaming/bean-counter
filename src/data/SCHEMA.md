@@ -22,7 +22,7 @@ same `Docs.json` + version always produces byte-identical output.
 ```jsonc
 {
   "gameVersion": "1.2",   // string tag for the source game version
-  "schema": 1,            // bump if the shape below changes
+  "schema": 2,            // bump if the shape below changes
 
   "items": {              // every craftable/raw item, keyed by class name
     "Desc_OreIron_C": { "name": "Iron Ore", "form": "solid" }
@@ -39,6 +39,7 @@ same `Docs.json` + version always produces byte-identical output.
       "name": "Iron Ingot",
       "time": 2,                 // seconds per craft at 100% clock
       "building": "Build_SmelterMk1_C",
+      "alternate": false,        // true for the game's "Alternate: …" recipes
       "inputs":  [ { "item": "Desc_OreIron_C",  "amount": 1 } ],
       "outputs": [ { "item": "Desc_IronIngot_C", "amount": 1 } ]
       // amount = units per craft; outputs[0] is the primary product.
@@ -58,3 +59,7 @@ same `Docs.json` + version always produces byte-identical output.
   exists in `buildings`.
 - **Raw resources** (mined/extracted) appear as items but have no recipe; they're
   the leaves of any production chain.
+- **Alternates** are flagged with `"alternate": true`. The UI groups recipes by
+  their primary product and suppresses alternates from the main picker, offering
+  them as variants instead. Products with *only* alternate recipes (e.g. Polymer
+  Resin) keep their alternate in the picker so they stay reachable.

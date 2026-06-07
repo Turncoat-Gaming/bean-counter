@@ -4,7 +4,7 @@
   BC.datasets = BC.datasets || {};
   BC.datasets["1.2"] = {
    "gameVersion": "1.2",
-   "schema": 1,
+   "schema": 2,
    "items": {
     "Desc_AlienDNACapsule_C": {
      "name": "Alien DNA Capsule",
@@ -818,6 +818,7 @@
      "name": "AI Limiter",
      "time": 12,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_CopperSheet_C",
@@ -839,6 +840,7 @@
      "name": "Alien DNA Capsule",
      "time": 6,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_AlienProtein_C",
@@ -856,6 +858,7 @@
      "name": "Alien Power Matrix",
      "time": 24,
      "building": "Build_QuantumEncoder_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAMFluctuator_C",
@@ -889,6 +892,7 @@
      "name": "Alternate: Plastic AI Limiter",
      "time": 15,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_HighSpeedWire_C",
@@ -910,6 +914,7 @@
      "name": "Alternate: Adhered Iron Plate",
      "time": 16,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_IronPlate_C",
@@ -931,6 +936,7 @@
      "name": "Alternate: Alclad Casing",
      "time": 8,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_AluminumIngot_C",
@@ -952,6 +958,7 @@
      "name": "Alternate: Aluminum Rod",
      "time": 8,
      "building": "Build_ConstructorMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_AluminumIngot_C",
@@ -969,6 +976,7 @@
      "name": "Alternate: Automated Miner",
      "time": 60,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_SteelPipe_C",
@@ -990,6 +998,7 @@
      "name": "Alternate: Bolted Frame",
      "time": 24,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_IronPlateReinforced_C",
@@ -1011,6 +1020,7 @@
      "name": "Alternate: Insulated Cable",
      "time": 12,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_Wire_C",
@@ -1032,6 +1042,7 @@
      "name": "Alternate: Quickwire Cable",
      "time": 24,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_HighSpeedWire_C",
@@ -1053,6 +1064,7 @@
      "name": "Alternate: Leached Caterium Ingot",
      "time": 10,
      "building": "Build_OilRefinery_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_OreGold_C",
@@ -1074,6 +1086,7 @@
      "name": "Alternate: Tempered Caterium Ingot",
      "time": 8,
      "building": "Build_FoundryMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_OreGold_C",
@@ -1095,6 +1108,7 @@
      "name": "Alternate: Silicon Circuit Board",
      "time": 24,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_CopperSheet_C",
@@ -1116,6 +1130,7 @@
      "name": "Alternate: Caterium Circuit Board",
      "time": 48,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_Plastic_C",
@@ -1137,6 +1152,7 @@
      "name": "Alternate: Classic Battery",
      "time": 8,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_Sulfur_C",
@@ -1166,6 +1182,7 @@
      "name": "Alternate: Charcoal",
      "time": 4,
      "building": "Build_ConstructorMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_Wood_C",
@@ -1183,6 +1200,7 @@
      "name": "Alternate: Biocoal",
      "time": 8,
      "building": "Build_ConstructorMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_GenericBiomass_C",
@@ -1200,6 +1218,7 @@
      "name": "Alternate: Coated Cable",
      "time": 8,
      "building": "Build_OilRefinery_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_Wire_C",
@@ -1221,6 +1240,7 @@
      "name": "Alternate: Coated Iron Canister",
      "time": 4,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_IronPlate_C",
@@ -1242,6 +1262,7 @@
      "name": "Alternate: Coated Iron Plate",
      "time": 8,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_IronIngot_C",
@@ -1263,6 +1284,7 @@
      "name": "Alternate: Coke Steel Ingot",
      "time": 12,
      "building": "Build_FoundryMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_OreIron_C",
@@ -1284,6 +1306,7 @@
      "name": "Alternate: Caterium Computer",
      "time": 16,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_CircuitBoard_C",
@@ -1309,6 +1332,7 @@
      "name": "Alternate: Crystal Computer",
      "time": 36,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_CircuitBoard_C",
@@ -1330,6 +1354,7 @@
      "name": "Alternate: Fine Concrete",
      "time": 12,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_Silica_C",
@@ -1351,6 +1376,7 @@
      "name": "Alternate: Cooling Device",
      "time": 24,
      "building": "Build_Blender_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_AluminumPlateReinforced_C",
@@ -1376,6 +1402,7 @@
      "name": "Alternate: Copper Alloy Ingot",
      "time": 6,
      "building": "Build_FoundryMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_OreCopper_C",
@@ -1397,6 +1424,7 @@
      "name": "Alternate: Leached Copper Ingot",
      "time": 12,
      "building": "Build_OilRefinery_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_OreCopper_C",
@@ -1418,6 +1446,7 @@
      "name": "Alternate: Tempered Copper Ingot",
      "time": 12,
      "building": "Build_FoundryMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_OreCopper_C",
@@ -1439,6 +1468,7 @@
      "name": "Alternate: Copper Rotor",
      "time": 16,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_CopperSheet_C",
@@ -1460,6 +1490,7 @@
      "name": "Alternate: Insulated Crystal Oscillator",
      "time": 32,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_QuartzCrystal_C",
@@ -1485,6 +1516,7 @@
      "name": "Alternate: Dark Matter Crystallization",
      "time": 3,
      "building": "Build_HadronCollider_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_DarkEnergy_C",
@@ -1502,6 +1534,7 @@
      "name": "Alternate: Dark Matter Trap",
      "time": 2,
      "building": "Build_HadronCollider_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_TimeCrystal_C",
@@ -1523,6 +1556,7 @@
      "name": "Alternate: Cloudy Diamonds",
      "time": 3,
      "building": "Build_HadronCollider_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_Coal_C",
@@ -1544,6 +1578,7 @@
      "name": "Alternate: Oil-Based Diamonds",
      "time": 3,
      "building": "Build_HadronCollider_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_LiquidOil_C",
@@ -1561,6 +1596,7 @@
      "name": "Alternate: Petroleum Diamonds",
      "time": 2,
      "building": "Build_HadronCollider_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_PetroleumCoke_C",
@@ -1578,6 +1614,7 @@
      "name": "Alternate: Pink Diamonds",
      "time": 4,
      "building": "Build_Converter_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_Coal_C",
@@ -1599,6 +1636,7 @@
      "name": "Alternate: Turbo Diamonds",
      "time": 3,
      "building": "Build_HadronCollider_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_Coal_C",
@@ -1620,6 +1658,7 @@
      "name": "Alternate: Diluted Fuel",
      "time": 6,
      "building": "Build_Blender_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_HeavyOilResidue_C",
@@ -1641,6 +1680,7 @@
      "name": "Alternate: Diluted Packaged Fuel",
      "time": 2,
      "building": "Build_OilRefinery_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_HeavyOilResidue_C",
@@ -1662,6 +1702,7 @@
      "name": "Alternate: Electric Motor",
      "time": 16,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_ElectromagneticControlRod_C",
@@ -1683,6 +1724,7 @@
      "name": "Alternate: Electrode Aluminum Scrap",
      "time": 4,
      "building": "Build_OilRefinery_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_AluminaSolution_C",
@@ -1708,6 +1750,7 @@
      "name": "Alternate: Electrode Circuit Board",
      "time": 12,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_Rubber_C",
@@ -1729,6 +1772,7 @@
      "name": "Alternate: Electromagnetic Connection Rod",
      "time": 15,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_Stator_C",
@@ -1750,6 +1794,7 @@
      "name": "Alternate: Encased Industrial Pipe",
      "time": 15,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_SteelPipe_C",
@@ -1771,6 +1816,7 @@
      "name": "Alternate: Compacted Coal",
      "time": 12,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_Coal_C",
@@ -1792,6 +1838,7 @@
      "name": "Alternate: Fertile Uranium",
      "time": 12,
      "building": "Build_Blender_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_OreUranium_C",
@@ -1825,6 +1872,7 @@
      "name": "Alternate: Flexible Framework",
      "time": 16,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_ModularFrame_C",
@@ -1850,6 +1898,7 @@
      "name": "Alternate: Fused Wire",
      "time": 20,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_CopperIngot_C",
@@ -1871,6 +1920,7 @@
      "name": "Alternate: Fine Black Powder",
      "time": 8,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_Sulfur_C",
@@ -1892,6 +1942,7 @@
      "name": "Alternate: Heat-Fused Frame",
      "time": 20,
      "building": "Build_Blender_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_ModularFrameHeavy_C",
@@ -1921,6 +1972,7 @@
      "name": "Alternate: Heat Exchanger",
      "time": 6,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_AluminumCasing_C",
@@ -1942,6 +1994,7 @@
      "name": "Alternate: Heavy Flexible Frame",
      "time": 16,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_ModularFrame_C",
@@ -1971,6 +2024,7 @@
      "name": "Alternate: Heavy Oil Residue",
      "time": 6,
      "building": "Build_OilRefinery_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_LiquidOil_C",
@@ -1992,6 +2046,7 @@
      "name": "Alternate: Silicon High-Speed Connector",
      "time": 40,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_HighSpeedWire_C",
@@ -2017,6 +2072,7 @@
      "name": "Alternate: Automated Speed Wiring",
      "time": 32,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_Stator_C",
@@ -2042,6 +2098,7 @@
      "name": "Alternate: Iron Alloy Ingot",
      "time": 12,
      "building": "Build_FoundryMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_OreIron_C",
@@ -2063,6 +2120,7 @@
      "name": "Alternate: Solid Steel Ingot",
      "time": 3,
      "building": "Build_FoundryMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_IronIngot_C",
@@ -2084,6 +2142,7 @@
      "name": "Alternate: Compacted Steel Ingot",
      "time": 24,
      "building": "Build_FoundryMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_OreIron_C",
@@ -2105,6 +2164,7 @@
      "name": "Alternate: Instant Plutonium Cell",
      "time": 120,
      "building": "Build_HadronCollider_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_NonFissibleUranium_C",
@@ -2126,6 +2186,7 @@
      "name": "Alternate: Instant Scrap",
      "time": 6,
      "building": "Build_Blender_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_OreBauxite_C",
@@ -2159,6 +2220,7 @@
      "name": "Alternate: Dark-Ion Fuel",
      "time": 3,
      "building": "Build_Converter_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_PackagedRocketFuel_C",
@@ -2184,6 +2246,7 @@
      "name": "Alternate: Basic Iron Ingot",
      "time": 12,
      "building": "Build_FoundryMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_OreIron_C",
@@ -2205,6 +2268,7 @@
      "name": "Alternate: Leached Iron Ingot",
      "time": 6,
      "building": "Build_OilRefinery_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_OreIron_C",
@@ -2226,6 +2290,7 @@
      "name": "Alternate: Heavy Encased Frame",
      "time": 64,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_ModularFrame_C",
@@ -2255,6 +2320,7 @@
      "name": "Alternate: Steeled Frame",
      "time": 60,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_IronPlateReinforced_C",
@@ -2276,6 +2342,7 @@
      "name": "Alternate: Rigor Motor",
      "time": 48,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_Rotor_C",
@@ -2301,6 +2368,7 @@
      "name": "Alternate: Uranium Fuel Unit",
      "time": 300,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_UraniumCell_C",
@@ -2330,6 +2398,7 @@
      "name": "Alternate: OC Supercomputer",
      "time": 20,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_ModularFrameLightweight_C",
@@ -2351,6 +2420,7 @@
      "name": "Alternate: Plastic Smart Plating",
      "time": 24,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_IronPlateReinforced_C",
@@ -2376,6 +2446,7 @@
      "name": "Alternate: Recycled Plastic",
      "time": 12,
      "building": "Build_OilRefinery_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_Rubber_C",
@@ -2397,6 +2468,7 @@
      "name": "Alternate: Plutonium Fuel Unit",
      "time": 120,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_PlutoniumCell_C",
@@ -2418,6 +2490,7 @@
      "name": "Alternate: Polyester Fabric",
      "time": 2,
      "building": "Build_OilRefinery_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_PolymerResin_C",
@@ -2439,6 +2512,7 @@
      "name": "Alternate: Polymer Resin",
      "time": 6,
      "building": "Build_OilRefinery_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_LiquidOil_C",
@@ -2460,6 +2534,7 @@
      "name": "Alternate: Pure Caterium Ingot",
      "time": 5,
      "building": "Build_OilRefinery_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_OreGold_C",
@@ -2481,6 +2556,7 @@
      "name": "Alternate: Pure Copper Ingot",
      "time": 24,
      "building": "Build_OilRefinery_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_OreCopper_C",
@@ -2502,6 +2578,7 @@
      "name": "Alternate: Pure Iron Ingot",
      "time": 12,
      "building": "Build_OilRefinery_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_OreIron_C",
@@ -2523,6 +2600,7 @@
      "name": "Alternate: Pure Quartz Crystal",
      "time": 8,
      "building": "Build_OilRefinery_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_RawQuartz_C",
@@ -2544,6 +2622,7 @@
      "name": "Alternate: Fused Quartz Crystal",
      "time": 20,
      "building": "Build_FoundryMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_RawQuartz_C",
@@ -2565,6 +2644,7 @@
      "name": "Alternate: Quartz Purification",
      "time": 12,
      "building": "Build_OilRefinery_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_RawQuartz_C",
@@ -2590,6 +2670,7 @@
      "name": "Alternate: Fused Quickwire",
      "time": 8,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_GoldIngot_C",
@@ -2611,6 +2692,7 @@
      "name": "Alternate: Radio Control System",
      "time": 40,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_CrystalOscillator_C",
@@ -2640,6 +2722,7 @@
      "name": "Alternate: Radio Connection Unit",
      "time": 16,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_AluminumPlateReinforced_C",
@@ -2665,6 +2748,7 @@
      "name": "Alternate: Recycled Rubber",
      "time": 12,
      "building": "Build_OilRefinery_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_Plastic_C",
@@ -2686,6 +2770,7 @@
      "name": "Alternate: Bolted Iron Plate",
      "time": 12,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_IronPlate_C",
@@ -2707,6 +2792,7 @@
      "name": "Alternate: Stitched Iron Plate",
      "time": 32,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_IronPlate_C",
@@ -2728,6 +2814,7 @@
      "name": "Alternate: Nitro Rocket Fuel",
      "time": 2.4,
      "building": "Build_Blender_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_LiquidFuel_C",
@@ -2761,6 +2848,7 @@
      "name": "Alternate: Steel Rotor",
      "time": 12,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_SteelPipe_C",
@@ -2782,6 +2870,7 @@
      "name": "Alternate: Rubber Concrete",
      "time": 6,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_Stone_C",
@@ -2803,6 +2892,7 @@
      "name": "Alternate: Steel Screws",
      "time": 12,
      "building": "Build_ConstructorMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_SteelPlate_C",
@@ -2820,6 +2910,7 @@
      "name": "Alternate: Cast Screws",
      "time": 24,
      "building": "Build_ConstructorMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_IronIngot_C",
@@ -2837,6 +2928,7 @@
      "name": "Alternate: Cheap Silica",
      "time": 8,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_RawQuartz_C",
@@ -2858,6 +2950,7 @@
      "name": "Alternate: Distilled Silica",
      "time": 6,
      "building": "Build_Blender_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_DissolvedSilica_C",
@@ -2887,6 +2980,7 @@
      "name": "Alternate: Sloppy Alumina",
      "time": 3,
      "building": "Build_OilRefinery_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_OreBauxite_C",
@@ -2908,6 +3002,7 @@
      "name": "Alternate: Quickwire Stator",
      "time": 15,
      "building": "Build_AssemblerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_SteelPipe_C",
@@ -2929,6 +3024,7 @@
      "name": "Alternate: Steamed Copper Sheet",
      "time": 8,
      "building": "Build_OilRefinery_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_CopperIngot_C",
@@ -2950,6 +3046,7 @@
      "name": "Alternate: Aluminum Beam",
      "time": 8,
      "building": "Build_ConstructorMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_AluminumIngot_C",
@@ -2967,6 +3064,7 @@
      "name": "Alternate: Molded Beam",
      "time": 12,
      "building": "Build_FoundryMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_SteelIngot_C",
@@ -2988,6 +3086,7 @@
      "name": "Alternate: Steel Canister",
      "time": 6,
      "building": "Build_ConstructorMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_SteelIngot_C",
@@ -3005,6 +3104,7 @@
      "name": "Alternate: Steel Cast Plate",
      "time": 4,
      "building": "Build_FoundryMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_IronIngot_C",
@@ -3026,6 +3126,7 @@
      "name": "Alternate: Iron Pipe",
      "time": 12,
      "building": "Build_ConstructorMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_IronIngot_C",
@@ -3043,6 +3144,7 @@
      "name": "Alternate: Molded Steel Pipe",
      "time": 6,
      "building": "Build_FoundryMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_SteelIngot_C",
@@ -3064,6 +3166,7 @@
      "name": "Alternate: Steel Rod",
      "time": 5,
      "building": "Build_ConstructorMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_SteelIngot_C",
@@ -3081,6 +3184,7 @@
      "name": "Alternate: Super-State Computer",
      "time": 25,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_Computer_C",
@@ -3110,6 +3214,7 @@
      "name": "Alternate: Turbo Blend Fuel",
      "time": 8,
      "building": "Build_Blender_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_LiquidFuel_C",
@@ -3139,6 +3244,7 @@
      "name": "Alternate: Turbo Heavy Fuel",
      "time": 8,
      "building": "Build_OilRefinery_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_HeavyOilResidue_C",
@@ -3160,6 +3266,7 @@
      "name": "Alternate: Turbo Electric Motor",
      "time": 64,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_Motor_C",
@@ -3189,6 +3296,7 @@
      "name": "Alternate: Turbo Pressure Motor",
      "time": 32,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_Motor_C",
@@ -3218,6 +3326,7 @@
      "name": "Turbofuel",
      "time": 16,
      "building": "Build_OilRefinery_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_LiquidFuel_C",
@@ -3239,6 +3348,7 @@
      "name": "Alternate: Infused Uranium Cell",
      "time": 12,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_OreUranium_C",
@@ -3268,6 +3378,7 @@
      "name": "Alternate: Wet Concrete",
      "time": 3,
      "building": "Build_OilRefinery_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_Stone_C",
@@ -3289,6 +3400,7 @@
      "name": "Alternate: Iron Wire",
      "time": 24,
      "building": "Build_ConstructorMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_IronIngot_C",
@@ -3306,6 +3418,7 @@
      "name": "Alternate: Caterium Wire",
      "time": 4,
      "building": "Build_ConstructorMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_GoldIngot_C",
@@ -3323,6 +3436,7 @@
      "name": "Alumina Solution",
      "time": 6,
      "building": "Build_OilRefinery_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_OreBauxite_C",
@@ -3348,6 +3462,7 @@
      "name": "Aluminum Casing",
      "time": 2,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_AluminumIngot_C",
@@ -3365,6 +3480,7 @@
      "name": "Aluminum Scrap",
      "time": 1,
      "building": "Build_OilRefinery_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_AluminaSolution_C",
@@ -3390,6 +3506,7 @@
      "name": "Alclad Aluminum Sheet",
      "time": 6,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_AluminumIngot_C",
@@ -3411,6 +3528,7 @@
      "name": "Battery",
      "time": 3,
      "building": "Build_Blender_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SulfuricAcid_C",
@@ -3440,6 +3558,7 @@
      "name": "Bauxite (Caterium)",
      "time": 6,
      "building": "Build_Converter_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAMIngot_C",
@@ -3461,6 +3580,7 @@
      "name": "Bauxite (Copper)",
      "time": 6,
      "building": "Build_Converter_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAMIngot_C",
@@ -3482,6 +3602,7 @@
      "name": "Solid Biofuel",
      "time": 4,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_GenericBiomass_C",
@@ -3499,6 +3620,7 @@
      "name": "Biomass (Alien Protein)",
      "time": 4,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_AlienProtein_C",
@@ -3516,6 +3638,7 @@
      "name": "Biomass (Leaves)",
      "time": 5,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Leaves_C",
@@ -3533,6 +3656,7 @@
      "name": "Biomass (Mycelia)",
      "time": 4,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Mycelia_C",
@@ -3550,6 +3674,7 @@
      "name": "Biomass (Wood)",
      "time": 4,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Wood_C",
@@ -3567,6 +3692,7 @@
      "name": "Cable",
      "time": 2,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Wire_C",
@@ -3584,6 +3710,7 @@
      "name": "Candy Cane",
      "time": 12,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Gift_C",
@@ -3601,6 +3728,7 @@
      "name": "Turbo Rifle Ammo",
      "time": 12,
      "building": "Build_Blender_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_CartridgeStandard_C",
@@ -3626,6 +3754,7 @@
      "name": "Turbo Rifle Ammo",
      "time": 12,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_CartridgeStandard_C",
@@ -3651,6 +3780,7 @@
      "name": "Homing Rifle Ammo",
      "time": 24,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_CartridgeStandard_C",
@@ -3672,6 +3802,7 @@
      "name": "Rifle Ammo",
      "time": 12,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_CopperSheet_C",
@@ -3693,6 +3824,7 @@
      "name": "Caterium Ore (Copper)",
      "time": 6,
      "building": "Build_Converter_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAMIngot_C",
@@ -3714,6 +3846,7 @@
      "name": "Caterium Ore (Quartz)",
      "time": 6,
      "building": "Build_Converter_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAMIngot_C",
@@ -3735,6 +3868,7 @@
      "name": "Circuit Board",
      "time": 8,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_CopperSheet_C",
@@ -3756,6 +3890,7 @@
      "name": "Coal (Iron)",
      "time": 6,
      "building": "Build_Converter_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAMIngot_C",
@@ -3777,6 +3912,7 @@
      "name": "Coal (Limestone)",
      "time": 6,
      "building": "Build_Converter_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAMIngot_C",
@@ -3798,6 +3934,7 @@
      "name": "Supercomputer",
      "time": 32,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Computer_C",
@@ -3827,6 +3964,7 @@
      "name": "Computer",
      "time": 24,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_CircuitBoard_C",
@@ -3852,6 +3990,7 @@
      "name": "Concrete",
      "time": 4,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Stone_C",
@@ -3869,6 +4008,7 @@
      "name": "Cooling System",
      "time": 10,
      "building": "Build_Blender_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_AluminumPlateReinforced_C",
@@ -3898,6 +4038,7 @@
      "name": "Copper Powder",
      "time": 6,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_CopperIngot_C",
@@ -3915,6 +4056,7 @@
      "name": "Copper Sheet",
      "time": 6,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_CopperIngot_C",
@@ -3932,6 +4074,7 @@
      "name": "Copper Ore (Quartz)",
      "time": 6,
      "building": "Build_Converter_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAMIngot_C",
@@ -3953,6 +4096,7 @@
      "name": "Copper Ore (Sulfur)",
      "time": 6,
      "building": "Build_Converter_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAMIngot_C",
@@ -3974,6 +4118,7 @@
      "name": "Crystal Oscillator",
      "time": 120,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_QuartzCrystal_C",
@@ -3999,6 +4144,7 @@
      "name": "Dark Matter Residue",
      "time": 6,
      "building": "Build_Converter_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAMIngot_C",
@@ -4016,6 +4162,7 @@
      "name": "Dark Matter Crystal",
      "time": 2,
      "building": "Build_HadronCollider_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Diamond_C",
@@ -4037,6 +4184,7 @@
      "name": "Diamonds",
      "time": 2,
      "building": "Build_HadronCollider_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Coal_C",
@@ -4054,6 +4202,7 @@
      "name": "Electromagnetic Control Rod",
      "time": 30,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Stator_C",
@@ -4075,6 +4224,7 @@
      "name": "Encased Industrial Beam",
      "time": 10,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SteelPlate_C",
@@ -4096,6 +4246,7 @@
      "name": "Fabric",
      "time": 4,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Mycelia_C",
@@ -4117,6 +4268,7 @@
      "name": "Ficsite Ingot (Aluminum)",
      "time": 2,
      "building": "Build_Converter_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAMIngot_C",
@@ -4138,6 +4290,7 @@
      "name": "Ficsite Ingot (Caterium)",
      "time": 4,
      "building": "Build_Converter_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAMIngot_C",
@@ -4159,6 +4312,7 @@
      "name": "Ficsite Ingot (Iron)",
      "time": 6,
      "building": "Build_Converter_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAMIngot_C",
@@ -4180,6 +4334,7 @@
      "name": "Ficsite Trigon",
      "time": 6,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_FicsiteIngot_C",
@@ -4197,6 +4352,7 @@
      "name": "Ficsonium Fuel Rod",
      "time": 24,
      "building": "Build_QuantumEncoder_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Ficsonium_C",
@@ -4230,6 +4386,7 @@
      "name": "Ficsonium",
      "time": 6,
      "building": "Build_HadronCollider_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_PlutoniumWaste_C",
@@ -4255,6 +4412,7 @@
      "name": "Gas Filter",
      "time": 8,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Fabric_C",
@@ -4280,6 +4438,7 @@
      "name": "Iodine-Infused Filter",
      "time": 16,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Filter_C",
@@ -4305,6 +4464,7 @@
      "name": "Sweet Fireworks",
      "time": 24,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_XmasBranch_C",
@@ -4326,6 +4486,7 @@
      "name": "Fancy Fireworks",
      "time": 24,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_XmasBranch_C",
@@ -4347,6 +4508,7 @@
      "name": "Sparkly Fireworks",
      "time": 24,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_XmasBranch_C",
@@ -4368,6 +4530,7 @@
      "name": "Empty Canister",
      "time": 4,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Plastic_C",
@@ -4385,6 +4548,7 @@
      "name": "Packaged Fuel",
      "time": 3,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_LiquidFuel_C",
@@ -4406,6 +4570,7 @@
      "name": "Fused Modular Frame",
      "time": 40,
      "building": "Build_Blender_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_ModularFrameHeavy_C",
@@ -4431,6 +4596,7 @@
      "name": "Empty Fluid Tank",
      "time": 1,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_AluminumIngot_C",
@@ -4448,6 +4614,7 @@
      "name": "Smokeless Powder",
      "time": 6,
      "building": "Build_OilRefinery_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Gunpowder_C",
@@ -4469,6 +4636,7 @@
      "name": "Black Powder",
      "time": 4,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Coal_C",
@@ -4490,6 +4658,7 @@
      "name": "Heat Sink",
      "time": 8,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_AluminumPlate_C",
@@ -4511,6 +4680,7 @@
      "name": "High-Speed Connector",
      "time": 16,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_HighSpeedWire_C",
@@ -4536,6 +4706,7 @@
      "name": "Aluminum Ingot",
      "time": 4,
      "building": "Build_FoundryMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_AluminumScrap_C",
@@ -4557,6 +4728,7 @@
      "name": "Caterium Ingot",
      "time": 4,
      "building": "Build_SmelterMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_OreGold_C",
@@ -4574,6 +4746,7 @@
      "name": "Copper Ingot",
      "time": 2,
      "building": "Build_SmelterMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_OreCopper_C",
@@ -4591,6 +4764,7 @@
      "name": "Iron Ingot",
      "time": 2,
      "building": "Build_SmelterMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_OreIron_C",
@@ -4608,6 +4782,7 @@
      "name": "Reanimated SAM",
      "time": 2,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAM_C",
@@ -4625,6 +4800,7 @@
      "name": "Steel Ingot",
      "time": 4,
      "building": "Build_FoundryMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_OreIron_C",
@@ -4646,6 +4822,7 @@
      "name": "Ionized Fuel",
      "time": 24,
      "building": "Build_OilRefinery_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_RocketFuel_C",
@@ -4671,6 +4848,7 @@
      "name": "Reinforced Iron Plate",
      "time": 12,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_IronPlate_C",
@@ -4692,6 +4870,7 @@
      "name": "Iron Plate",
      "time": 6,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_IronIngot_C",
@@ -4709,6 +4888,7 @@
      "name": "Iron Rod",
      "time": 4,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_IronIngot_C",
@@ -4726,6 +4906,7 @@
      "name": "Iron Ore (Limestone)",
      "time": 6,
      "building": "Build_Converter_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAMIngot_C",
@@ -4747,6 +4928,7 @@
      "name": "Limestone (Sulfur)",
      "time": 6,
      "building": "Build_Converter_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAMIngot_C",
@@ -4768,6 +4950,7 @@
      "name": "Liquid Biofuel",
      "time": 4,
      "building": "Build_OilRefinery_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Biofuel_C",
@@ -4789,6 +4972,7 @@
      "name": "Fuel",
      "time": 6,
      "building": "Build_OilRefinery_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_LiquidOil_C",
@@ -4810,6 +4994,7 @@
      "name": "Heavy Modular Frame",
      "time": 30,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_ModularFrame_C",
@@ -4839,6 +5024,7 @@
      "name": "Modular Frame",
      "time": 60,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_IronPlateReinforced_C",
@@ -4860,6 +5046,7 @@
      "name": "Turbo Motor",
      "time": 32,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_CoolingSystem_C",
@@ -4889,6 +5076,7 @@
      "name": "Motor",
      "time": 12,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Rotor_C",
@@ -4910,6 +5098,7 @@
      "name": "Nitric Acid",
      "time": 6,
      "building": "Build_Blender_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_NitrogenGas_C",
@@ -4935,6 +5124,7 @@
      "name": "Nitrogen Gas (Bauxite)",
      "time": 6,
      "building": "Build_Converter_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAMIngot_C",
@@ -4956,6 +5146,7 @@
      "name": "Nitrogen Gas (Caterium)",
      "time": 6,
      "building": "Build_Converter_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAMIngot_C",
@@ -4977,6 +5168,7 @@
      "name": "Cluster Nobelisk",
      "time": 24,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_NobeliskExplosive_C",
@@ -4998,6 +5190,7 @@
      "name": "Gas Nobelisk",
      "time": 12,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_NobeliskExplosive_C",
@@ -5019,6 +5212,7 @@
      "name": "Nuke Nobelisk",
      "time": 120,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_NobeliskExplosive_C",
@@ -5048,6 +5242,7 @@
      "name": "Pulse Nobelisk",
      "time": 60,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_NobeliskExplosive_C",
@@ -5069,6 +5264,7 @@
      "name": "Nobelisk",
      "time": 6,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Gunpowder_C",
@@ -5090,6 +5286,7 @@
      "name": "Non-Fissile Uranium",
      "time": 24,
      "building": "Build_Blender_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_NuclearWaste_C",
@@ -5123,6 +5320,7 @@
      "name": "Uranium Fuel Rod",
      "time": 150,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_UraniumCell_C",
@@ -5148,6 +5346,7 @@
      "name": "Packaged Alumina Solution",
      "time": 1,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_AluminaSolution_C",
@@ -5169,6 +5368,7 @@
      "name": "Packaged Liquid Biofuel",
      "time": 3,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_LiquidBiofuel_C",
@@ -5190,6 +5390,7 @@
      "name": "Packaged Oil",
      "time": 4,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_LiquidOil_C",
@@ -5211,6 +5412,7 @@
      "name": "Packaged Ionized Fuel",
      "time": 3,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_IonizedFuel_C",
@@ -5232,6 +5434,7 @@
      "name": "Packaged Nitric Acid",
      "time": 2,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_NitricAcid_C",
@@ -5253,6 +5456,7 @@
      "name": "Packaged Nitrogen Gas",
      "time": 1,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_NitrogenGas_C",
@@ -5274,6 +5478,7 @@
      "name": "Packaged Heavy Oil Residue",
      "time": 4,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_HeavyOilResidue_C",
@@ -5295,6 +5500,7 @@
      "name": "Packaged Rocket Fuel",
      "time": 1,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_RocketFuel_C",
@@ -5316,6 +5522,7 @@
      "name": "Packaged Sulfuric Acid",
      "time": 3,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SulfuricAcid_C",
@@ -5337,6 +5544,7 @@
      "name": "Packaged Turbofuel",
      "time": 6,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_LiquidTurboFuel_C",
@@ -5358,6 +5566,7 @@
      "name": "Packaged Water",
      "time": 2,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Water_C",
@@ -5379,6 +5588,7 @@
      "name": "Petroleum Coke",
      "time": 6,
      "building": "Build_OilRefinery_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_HeavyOilResidue_C",
@@ -5396,6 +5606,7 @@
      "name": "Plastic",
      "time": 6,
      "building": "Build_OilRefinery_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_LiquidOil_C",
@@ -5417,6 +5628,7 @@
      "name": "Encased Plutonium Cell",
      "time": 12,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_PlutoniumPellet_C",
@@ -5438,6 +5650,7 @@
      "name": "Plutonium Fuel Rod",
      "time": 240,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_PlutoniumCell_C",
@@ -5467,6 +5680,7 @@
      "name": "Plutonium Pellet",
      "time": 60,
      "building": "Build_HadronCollider_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_NonFissibleUranium_C",
@@ -5488,6 +5702,7 @@
      "name": "Power Shard (1)",
      "time": 8,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Crystal_C",
@@ -5505,6 +5720,7 @@
      "name": "Power Shard (2)",
      "time": 12,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Crystal_mk2_C",
@@ -5522,6 +5738,7 @@
      "name": "Power Shard (5)",
      "time": 24,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Crystal_mk3_C",
@@ -5539,6 +5756,7 @@
      "name": "Pressure Conversion Cube",
      "time": 60,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_ModularFrameFused_C",
@@ -5560,6 +5778,7 @@
      "name": "Hatcher Protein",
      "time": 3,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_HatcherParts_C",
@@ -5577,6 +5796,7 @@
      "name": "Hog Protein",
      "time": 3,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_HogParts_C",
@@ -5594,6 +5814,7 @@
      "name": "Spitter Protein",
      "time": 3,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SpitterParts_C",
@@ -5611,6 +5832,7 @@
      "name": "Stinger Protein",
      "time": 3,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_StingerParts_C",
@@ -5628,6 +5850,7 @@
      "name": "Alternate: Pure Aluminum Ingot",
      "time": 2,
      "building": "Build_SmelterMk1_C",
+     "alternate": true,
      "inputs": [
       {
        "item": "Desc_AluminumScrap_C",
@@ -5645,6 +5868,7 @@
      "name": "Excited Photonic Matter",
      "time": 3,
      "building": "Build_Converter_C",
+     "alternate": false,
      "inputs": [],
      "outputs": [
       {
@@ -5657,6 +5881,7 @@
      "name": "Quartz Crystal",
      "time": 8,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_RawQuartz_C",
@@ -5674,6 +5899,7 @@
      "name": "Raw Quartz (Bauxite)",
      "time": 6,
      "building": "Build_Converter_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAMIngot_C",
@@ -5695,6 +5921,7 @@
      "name": "Raw Quartz (Coal)",
      "time": 6,
      "building": "Build_Converter_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAMIngot_C",
@@ -5716,6 +5943,7 @@
      "name": "Quickwire",
      "time": 5,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_GoldIngot_C",
@@ -5733,6 +5961,7 @@
      "name": "Radio Control Unit",
      "time": 48,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_AluminumCasing_C",
@@ -5758,6 +5987,7 @@
      "name": "Explosive Rebar",
      "time": 12,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SpikedRebar_C",
@@ -5783,6 +6013,7 @@
      "name": "Shatter Rebar",
      "time": 12,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SpikedRebar_C",
@@ -5804,6 +6035,7 @@
      "name": "Stun Rebar",
      "time": 6,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SpikedRebar_C",
@@ -5825,6 +6057,7 @@
      "name": "Residual Fuel",
      "time": 6,
      "building": "Build_OilRefinery_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_HeavyOilResidue_C",
@@ -5842,6 +6075,7 @@
      "name": "Residual Plastic",
      "time": 6,
      "building": "Build_OilRefinery_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_PolymerResin_C",
@@ -5863,6 +6097,7 @@
      "name": "Residual Rubber",
      "time": 6,
      "building": "Build_OilRefinery_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_PolymerResin_C",
@@ -5884,6 +6119,7 @@
      "name": "Rocket Fuel",
      "time": 6,
      "building": "Build_Blender_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_LiquidTurboFuel_C",
@@ -5909,6 +6145,7 @@
      "name": "Rotor",
      "time": 15,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_IronRod_C",
@@ -5930,6 +6167,7 @@
      "name": "Rubber",
      "time": 6,
      "building": "Build_OilRefinery_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_LiquidOil_C",
@@ -5951,6 +6189,7 @@
      "name": "SAM Fluctuator",
      "time": 6,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAMIngot_C",
@@ -5976,6 +6215,7 @@
      "name": "Screws",
      "time": 6,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_IronRod_C",
@@ -5993,6 +6233,7 @@
      "name": "Silica",
      "time": 8,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_RawQuartz_C",
@@ -6010,6 +6251,7 @@
      "name": "Singularity Cell",
      "time": 60,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SpaceElevatorPart_9_C",
@@ -6039,6 +6281,7 @@
      "name": "FICSMAS Actual Snow",
      "time": 12,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Gift_C",
@@ -6056,6 +6299,7 @@
      "name": "Snowball",
      "time": 12,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Snow_C",
@@ -6073,6 +6317,7 @@
      "name": "Biochemical Sculptor",
      "time": 120,
      "building": "Build_Blender_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SpaceElevatorPart_7_C",
@@ -6098,6 +6343,7 @@
      "name": "Ballistic Warp Drive",
      "time": 60,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SpaceElevatorPart_8_C",
@@ -6127,6 +6373,7 @@
      "name": "AI Expansion Server",
      "time": 15,
      "building": "Build_QuantumEncoder_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SpaceElevatorPart_6_C",
@@ -6160,6 +6407,7 @@
      "name": "Smart Plating",
      "time": 30,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_IronPlateReinforced_C",
@@ -6181,6 +6429,7 @@
      "name": "Versatile Framework",
      "time": 24,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_ModularFrame_C",
@@ -6202,6 +6451,7 @@
      "name": "Automated Wiring",
      "time": 24,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Stator_C",
@@ -6223,6 +6473,7 @@
      "name": "Modular Engine",
      "time": 60,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Motor_C",
@@ -6248,6 +6499,7 @@
      "name": "Adaptive Control Unit",
      "time": 60,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SpaceElevatorPart_3_C",
@@ -6277,6 +6529,7 @@
      "name": "Magnetic Field Generator",
      "time": 120,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SpaceElevatorPart_2_C",
@@ -6298,6 +6551,7 @@
      "name": "Assembly Director System",
      "time": 80,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SpaceElevatorPart_5_C",
@@ -6319,6 +6573,7 @@
      "name": "Thermal Propulsion Rocket",
      "time": 120,
      "building": "Build_ManufacturerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SpaceElevatorPart_4_C",
@@ -6348,6 +6603,7 @@
      "name": "Nuclear Pasta",
      "time": 120,
      "building": "Build_HadronCollider_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_CopperDust_C",
@@ -6369,6 +6625,7 @@
      "name": "Iron Rebar",
      "time": 4,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_IronRod_C",
@@ -6386,6 +6643,7 @@
      "name": "Stator",
      "time": 12,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SteelPipe_C",
@@ -6407,6 +6665,7 @@
      "name": "Steel Beam",
      "time": 4,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SteelIngot_C",
@@ -6424,6 +6683,7 @@
      "name": "Steel Pipe",
      "time": 6,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SteelIngot_C",
@@ -6441,6 +6701,7 @@
      "name": "Sulfur (Coal)",
      "time": 6,
      "building": "Build_Converter_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAMIngot_C",
@@ -6462,6 +6723,7 @@
      "name": "Sulfur (Iron)",
      "time": 6,
      "building": "Build_Converter_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAMIngot_C",
@@ -6483,6 +6745,7 @@
      "name": "Sulfuric Acid",
      "time": 6,
      "building": "Build_OilRefinery_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Sulfur_C",
@@ -6504,6 +6767,7 @@
      "name": "Superposition Oscillator",
      "time": 12,
      "building": "Build_QuantumEncoder_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_DarkMatter_C",
@@ -6537,6 +6801,7 @@
      "name": "Synthetic Power Shard",
      "time": 12,
      "building": "Build_QuantumEncoder_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_TimeCrystal_C",
@@ -6570,6 +6835,7 @@
      "name": "Neural-Quantum Processor",
      "time": 20,
      "building": "Build_QuantumEncoder_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_TimeCrystal_C",
@@ -6603,6 +6869,7 @@
      "name": "Time Crystal",
      "time": 10,
      "building": "Build_Converter_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Diamond_C",
@@ -6620,6 +6887,7 @@
      "name": "Unpackage Alumina Solution",
      "time": 1,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_PackagedAlumina_C",
@@ -6641,6 +6909,7 @@
      "name": "Unpackage Liquid Biofuel",
      "time": 2,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_PackagedBiofuel_C",
@@ -6662,6 +6931,7 @@
      "name": "Unpackage Fuel",
      "time": 2,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Fuel_C",
@@ -6683,6 +6953,7 @@
      "name": "Unpackage Ionized Fuel",
      "time": 3,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_PackagedIonizedFuel_C",
@@ -6704,6 +6975,7 @@
      "name": "Unpackage Nitric Acid",
      "time": 3,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_PackagedNitricAcid_C",
@@ -6725,6 +6997,7 @@
      "name": "Unpackage Nitrogen Gas",
      "time": 1,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_PackagedNitrogenGas_C",
@@ -6746,6 +7019,7 @@
      "name": "Unpackage Heavy Oil Residue",
      "time": 6,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_PackagedOilResidue_C",
@@ -6767,6 +7041,7 @@
      "name": "Unpackage Oil",
      "time": 2,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_PackagedOil_C",
@@ -6788,6 +7063,7 @@
      "name": "Unpackage Rocket Fuel",
      "time": 1,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_PackagedRocketFuel_C",
@@ -6809,6 +7085,7 @@
      "name": "Unpackage Sulfuric Acid",
      "time": 1,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_PackagedSulfuricAcid_C",
@@ -6830,6 +7107,7 @@
      "name": "Unpackage Turbofuel",
      "time": 6,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_TurboFuel_C",
@@ -6851,6 +7129,7 @@
      "name": "Unpackage Water",
      "time": 1,
      "building": "Build_Packager_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_PackagedWater_C",
@@ -6872,6 +7151,7 @@
      "name": "Encased Uranium Cell",
      "time": 12,
      "building": "Build_Blender_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_OreUranium_C",
@@ -6901,6 +7181,7 @@
      "name": "Uranium Ore (Bauxite)",
      "time": 6,
      "building": "Build_Converter_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_SAMIngot_C",
@@ -6922,6 +7203,7 @@
      "name": "Wire",
      "time": 4,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_CopperIngot_C",
@@ -6939,6 +7221,7 @@
      "name": "Red FICSMAS Ornament",
      "time": 12,
      "building": "Build_SmelterMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Gift_C",
@@ -6956,6 +7239,7 @@
      "name": "Blue FICSMAS Ornament",
      "time": 12,
      "building": "Build_SmelterMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Gift_C",
@@ -6973,6 +7257,7 @@
      "name": "Copper FICSMAS Ornament",
      "time": 12,
      "building": "Build_FoundryMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_XmasBall1_C",
@@ -6994,6 +7279,7 @@
      "name": "Iron FICSMAS Ornament",
      "time": 12,
      "building": "Build_FoundryMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_XmasBall2_C",
@@ -7015,6 +7301,7 @@
      "name": "FICSMAS Ornament Bundle",
      "time": 12,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_XmasBall3_C",
@@ -7036,6 +7323,7 @@
      "name": "FICSMAS Bow",
      "time": 12,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Gift_C",
@@ -7053,6 +7341,7 @@
      "name": "FICSMAS Tree Branch",
      "time": 6,
      "building": "Build_ConstructorMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_Gift_C",
@@ -7070,6 +7359,7 @@
      "name": "FICSMAS Wonder Star",
      "time": 60,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_XmasWreath_C",
@@ -7091,6 +7381,7 @@
      "name": "FICSMAS Wreath",
      "time": 60,
      "building": "Build_AssemblerMk1_C",
+     "alternate": false,
      "inputs": [
       {
        "item": "Desc_XmasBranch_C",

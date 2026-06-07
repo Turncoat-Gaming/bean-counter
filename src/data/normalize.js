@@ -105,10 +105,16 @@
       const outputs = parseItemAmounts(r.mProduct, itemForms);
       if (outputs.length === 0) continue;
 
+      // Alternate recipes are tagged in the game by class/name; we flag them so
+      // the UI can suppress them from the main list but still offer them as
+      // variants for whatever they produce.
+      const alternate = r.ClassName.indexOf('Recipe_Alternate') === 0 || /^Alternate:/.test(r.mDisplayName || '');
+
       recipes[r.ClassName] = {
         name: r.mDisplayName,
         time: Number(r.mManufactoringDuration) || 0,
         building,
+        alternate,
         inputs: parseItemAmounts(r.mIngredients, itemForms),
         outputs,
       };
@@ -116,7 +122,7 @@
 
     return {
       gameVersion,
-      schema: 1,
+      schema: 2,
       items: sortedObject(items),
       buildings: sortedObject(buildings),
       recipes: sortedObject(recipes),
