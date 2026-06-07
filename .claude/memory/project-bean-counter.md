@@ -28,11 +28,15 @@ primary product, with a variant chip selector); and a **full-chain solver**
 per step, raw-resource + byproduct totals, per-building roll-up. Solver uses
 memoized per-unit expansion so shared intermediates aggregate; raw resources are
 flagged `resource:true` in data (they have conversion/unpackage recipes, so the
-flag is what stops the solver "producing" them). Known simplifications:
-byproducts are gross (not credited back), one recipe per item (standard default).
+flag is what stops the solver "producing" them). Solver takes an optional
+`recipeChoices` (item→recipeKey) override map. **Per-step alternate selection**:
+each chain step with alternates shows an inline `<select>`; picks feed
+`recipeChoices` and persist in the bookmark as `c:[recipeKey…]` (item derived from
+the recipe's product). Known simplification still open: byproducts are gross (not
+credited back).
 
-Roadmap (evolve simply): per-step alternate selection deep in the chain,
-byproduct crediting, overclock, multi-line plans, version selector growth.
+Roadmap (evolve simply): byproduct crediting, overclock, multi-line plans,
+version selector growth.
 
 Constraints live in [[feedback-no-npm-supply-chain]]; workflow in
 [[project-workflow-main-only]].

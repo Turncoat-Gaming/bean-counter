@@ -133,6 +133,31 @@
       const slag = sol.byproducts.find((b) => b.item === 'Desc_Slag_C');
       assertClose(slag.rate, 5); // 1/craft × 5 ingot machines
     }],
+    ['per-step recipe override changes the chain', function () {
+      const base = solveChain(solverFixture, 'Recipe_Widget_C', 1);
+      assertEqual(base.raw.some((r) => r.item === 'Desc_Ore_C'), true);     // default: Ore + Slag
+      assertEqual(base.byproducts.some((b) => b.item === 'Desc_Slag_C'), true);
+
+      const sol = solveChain(solverFixture, 'Recipe_Widget_C', 1, {
+        recipeChoices: { Desc_Ingot_C: 'Recipe_Alternate_PureIngot_C' },
+      });
+      const altOre = sol.raw.find((r) => r.item === 'Desc_AltOre_C');
+      assertClose(altOre.rate, 10);  // 5 ingot × 2 Alt Ore
+      assertEqual(sol.raw.some((r) => r.item === 'Desc_Ore_C'), false);     // no longer mined
+      assertEqual(sol.byproducts.some((b) => b.item === 'Desc_Slag_C'), false); // no byproduct now
+    }],
+
+    // --- bookmark carries deep choices ---
+    ['bookmark round-trips with choiceKeys', function () {
+      const plan = { version: '1.2', entries: [{ recipeKey: 'Recipe_W_C', targetRate: 60, choiceKeys: ['Recipe_A_C', 'Recipe_B_C'] }] };
+      const back = decodePlan(encodePlan(plan));
+      assertEqual(back.entries[0].choiceKeys.length, 2);
+      assertEqual(back.entries[0].choiceKeys[0], 'Recipe_A_C');
+    }],
+    ['bookmark without choices decodes to empty choiceKeys', function () {
+      const back = decodePlan(encodePlan({ version: '1.2', entries: [{ recipeKey: 'Recipe_W_C', targetRate: 1 }] }));
+      assertEqual(back.entries[0].choiceKeys.length, 0);
+    }],
   ];
 
   // Fixture exercising standard+alternate, multi-standard, and orphan-alt cases.
@@ -167,6 +192,7 @@
       Desc_Ingot_C: { name: 'Ingot', form: 'solid' },
       Desc_Slag_C: { name: 'Slag', form: 'solid' },
       Desc_Ore_C: { name: 'Ore', form: 'solid', resource: true },
+      Desc_AltOre_C: { name: 'Alt Ore', form: 'solid', resource: true },
     },
     buildings: { B_C: { name: 'Machine', power: 1 } },
     recipes: {
@@ -174,6 +200,8 @@
       Recipe_Plate_C: { name: 'Plate', time: 60, building: 'B_C', alternate: false, inputs: [{ item: 'Desc_Ingot_C', amount: 1 }], outputs: [{ item: 'Desc_Plate_C', amount: 1 }] },
       Recipe_Rod_C: { name: 'Rod', time: 60, building: 'B_C', alternate: false, inputs: [{ item: 'Desc_Ingot_C', amount: 1 }], outputs: [{ item: 'Desc_Rod_C', amount: 1 }] },
       Recipe_Ingot_C: { name: 'Ingot', time: 60, building: 'B_C', alternate: false, inputs: [{ item: 'Desc_Ore_C', amount: 1 }], outputs: [{ item: 'Desc_Ingot_C', amount: 1 }, { item: 'Desc_Slag_C', amount: 1 }] },
+      // An alternate way to make Ingot (from Alt Ore, no Slag byproduct).
+      Recipe_Alternate_PureIngot_C: { name: 'Alternate: Pure Ingot', time: 60, building: 'B_C', alternate: true, inputs: [{ item: 'Desc_AltOre_C', amount: 2 }], outputs: [{ item: 'Desc_Ingot_C', amount: 1 }] },
       // A conversion recipe producing the raw Ore — must be ignored by default.
       Recipe_ConvertOre_C: { name: 'Ore (Ingot)', time: 60, building: 'B_C', alternate: false, inputs: [{ item: 'Desc_Ingot_C', amount: 1 }], outputs: [{ item: 'Desc_Ore_C', amount: 1 }] },
     },

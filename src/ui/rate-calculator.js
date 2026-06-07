@@ -1,7 +1,7 @@
 // rate-calculator.js — the planner view. Owns DOM only; all math lives in the
-// engine. Two modes: "Full chain" (recursive solve to raw resources) and
-// "Single step" (just the selected recipe). Classic script: exposes
-// BeanCounter.ui.mountPlanner (loads over file://).
+// engine. Two modes: "Full chain" (recursive solve to raw resources, with
+// per-step recipe selection) and "Single step" (just the selected recipe).
+// Classic script: exposes BeanCounter.ui.mountPlanner (loads over file://).
 (function (BC) {
   'use strict';
 
@@ -48,8 +48,11 @@
     const resultEl = root.querySelector('#result');
     const bookmarkEl = root.querySelector('#bookmark');
 
-    let active = null;       // current recipe (may be an alternate)
+    let active = null;        // target recipe (may be an alternate)
     let mode = 'chain';
+    let choices = {};         // per-step override: item -> recipeKey (deep alternates)
+    let targetItem = null;    // product of `active`, set during chain render
+    let bookmarkChoiceKeys = []; // choices actually used by the current chain
 
     for (const [key, recipe] of data.pickerRecipes(dataset)) {
       const opt = document.createElement('option');
@@ -92,8 +95,32 @@
         '</div>';
     }
 
+    // The recipe cell for a step: a <select> of variants if there's more than one
+    // (so it's selectable), otherwise just the name.
+    function recipeCell(step) {
+      const variants = data.variantsForRecipe(dataset, step.item);
+      if (variants.length > 1) {
+        const opts = variants.map((k) => {
+          const r = dataset.recipes[k];
+          const lbl = variantLabel(r.name) + (r.alternate ? ' (alt)' : '');
+          return '<option value="' + esc(k) + '"' + (k === step.recipeKey ? ' selected' : '') + '>' + esc(lbl) + '</option>';
+        }).join('');
+        return '<select class="step-recipe" data-item="' + esc(step.item) +
+          '" aria-label="Recipe for ' + esc(itemName(step.item)) + '">' + opts + '</select>';
+      }
+      const tag = step.alternate ? '<span class="tag">alt</span>' : '';
+      return '<span class="rname">' + tag + esc(variantLabel(step.recipeName)) + '</span>';
+    }
+
     function renderChain(targetRate) {
-      const sol = solveChain(dataset, active, targetRate);
+      const sol = solveChain(dataset, active, targetRate, { recipeChoices: choices });
+      targetItem = sol.targetItem;
+
+      // Which overrides are actually in play (for a tidy bookmark).
+      const stepItems = new Set(sol.steps.map((s) => s.item));
+      bookmarkChoiceKeys = Object.keys(choices)
+        .filter((it) => stepItems.has(it) && it !== targetItem)
+        .map((it) => choices[it]);
 
       const buildings = Object.keys(sol.totals.byBuilding)
         .map((k) => [k, sol.totals.byBuilding[k]])
@@ -101,13 +128,12 @@
         .map(([k, m]) => fmt(m) + '× ' + esc(data.buildingName(dataset, k)))
         .join(' · ');
 
-      const steps = sol.steps.map((s) => {
-        const tag = s.alternate ? '<span class="tag">alt</span>' : '';
-        return '<li><span class="mach">' + fmt(s.machines) + '×</span> ' +
-          '<span class="bld">' + esc(s.buildingName) + '</span> ' +
-          '<span class="rname">' + tag + esc(variantLabel(s.recipeName)) + '</span> ' +
-          '<span class="srate">' + fmt(s.rate) + '/min ' + esc(itemName(s.item)) + '</span></li>';
-      }).join('');
+      const steps = sol.steps.map((s) =>
+        '<li><span class="mach">' + fmt(s.machines) + '×</span> ' +
+        '<span class="bld">' + esc(s.buildingName) + '</span> ' +
+        recipeCell(s) +
+        ' <span class="srate">' + fmt(s.rate) + '/min ' + esc(itemName(s.item)) + '</span></li>'
+      ).join('');
 
       resultEl.innerHTML =
         '<div class="headline"><strong>' + fmt(sol.totals.machines) + '</strong> machines' +
@@ -125,7 +151,8 @@
       const targetRate = Number(rateInput.value) || 0;
       if (mode === 'chain') renderChain(targetRate); else renderSingle(targetRate);
 
-      const bookmark = encodePlan({ version: dataset.gameVersion, entries: [{ recipeKey: active, targetRate }] });
+      const choiceKeys = mode === 'chain' ? bookmarkChoiceKeys : [];
+      const bookmark = encodePlan({ version: dataset.gameVersion, entries: [{ recipeKey: active, targetRate, choiceKeys }] });
       bookmarkEl.value = bookmark;
       history.replaceState(null, '', '#' + bookmark);
     }
@@ -137,6 +164,20 @@
       render();
     }
 
+    function setMode(m) {
+      mode = m;
+      for (const b of modesEl.querySelectorAll('.mode')) b.classList.toggle('active', b.dataset.mode === m);
+    }
+
+    // Rebuild the choices map from a bookmark's recipe keys (item = recipe's product).
+    function applyChoiceKeys(keys) {
+      choices = {};
+      for (const k of keys || []) {
+        const r = dataset.recipes[k];
+        if (r) choices[r.outputs[0].item] = k;
+      }
+    }
+
     function restoreFromHash() {
       const hash = location.hash.slice(1);
       if (!hash) return false;
@@ -144,6 +185,8 @@
         const first = decodePlan(hash).entries[0];
         if (first && dataset.recipes[first.recipeKey]) {
           rateInput.value = first.targetRate;
+          applyChoiceKeys(first.choiceKeys);
+          if (first.choiceKeys && first.choiceKeys.length) setMode('chain');
           setActive(first.recipeKey);
           return true;
         }
@@ -157,11 +200,20 @@
       const chip = e.target.closest('.chip');
       if (chip) setActive(chip.dataset.key);
     });
+    // Per-step recipe selection (deep alternates).
+    resultEl.addEventListener('change', (e) => {
+      const sel = e.target.closest('.step-recipe');
+      if (!sel) return;
+      const item = sel.dataset.item, key = sel.value;
+      if (item === targetItem) { setActive(key); return; }   // target is driven by `active`
+      if (data.defaultRecipeKey(dataset, item) === key) delete choices[item]; // back to default
+      else choices[item] = key;
+      render();
+    });
     modesEl.addEventListener('click', (e) => {
       const btn = e.target.closest('.mode');
       if (!btn || btn.dataset.mode === mode) return;
-      mode = btn.dataset.mode;
-      for (const b of modesEl.querySelectorAll('.mode')) b.classList.toggle('active', b === btn);
+      setMode(btn.dataset.mode);
       render();
     });
     bookmarkEl.addEventListener('change', () => {

@@ -123,6 +123,13 @@ button:hover { filter: brightness(1.05); }
 .steps .bld { color: var(--muted); min-width: 7rem; }
 .steps .rname { font-weight: 500; display: inline-flex; gap: 0.35rem; align-items: center; }
 .steps .srate { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+.step-recipe {
+  width: auto;
+  max-width: 16rem;
+  padding: 0.15rem 0.4rem;
+  font-size: 0.9rem;
+  border-color: var(--accent);
+}
 
 .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
 .cols h3 { margin: 0 0 0.4rem; font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }

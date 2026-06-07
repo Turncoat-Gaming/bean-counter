@@ -28,14 +28,16 @@ nginx box, a NAS share) by serving the files as-is.
   chain down to raw resources: machines and power per step, total raw-resource
   draw, gross byproducts, and a per-building roll-up. Shared intermediates are
   aggregated correctly. (Toggle to **Single step** for just the one recipe.)
+- **Per-step alternate selection** — any step in the chain that has alternate
+  recipes shows an inline picker, so you can swap the recipe used deep in the
+  tree and watch the whole plan re-solve. Your picks travel in the bookmark.
 - **Alternate recipes** — the picker stays uncluttered (alternates hidden); when a
   recipe has alternates, a variant selector appears so you can switch between them.
 - **Bookmarks** — every plan encodes into a short string that also lives in the
   URL. Copy the link (or the string) to save or share a plan; paste it to
   restore. Fully client-side, reversible, no server.
 
-Planned next: per-step alternate selection deep in the chain, byproduct crediting,
-overclock/clock-speed, and multi-line plans.
+Planned next: byproduct crediting, overclock/clock-speed, and multi-line plans.
 
 ## Project layout
 
