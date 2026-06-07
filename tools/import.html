@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy"
+        content="script-src 'self'; style-src 'self'; base-uri 'none'" />
   <title>bean-counter — data importer</title>
   <link rel="stylesheet" href="../src/styles.css" />
 </head>
@@ -25,10 +27,10 @@
         <input id="file" type="file" accept=".json" />
       </div>
       <p id="status" class="muted" aria-live="polite"></p>
-      <div class="row" style="display:flex; gap:.5rem">
+      <div class="row">
         <button id="download" type="button" disabled>Download recipes.js</button>
       </div>
-      <p class="muted" style="margin-top:1rem">
+      <p class="muted note">
         Save the download to <code>src/data/&lt;version&gt;/recipes.js</code>, add the
         version to <code>src/data/versions.js</code>, and reference it from
         <code>index.html</code>. (Maintainers can equivalently run
@@ -37,49 +39,9 @@
     </section>
   </main>
 
-  <!-- Classic scripts (no modules) so this page also works over file://. -->
+  <!-- Classic, external scripts only (no inline) so this page runs under the
+       same strict CSP and over file://. -->
   <script src="../src/data/normalize.js"></script>
-  <script>
-    (function () {
-      var normalize = window.BeanCounter.normalize;
-      var fileEl = document.querySelector('#file');
-      var versionEl = document.querySelector('#version');
-      var statusEl = document.querySelector('#status');
-      var downloadBtn = document.querySelector('#download');
-      var blobUrl = null;
-
-      fileEl.addEventListener('change', async function () {
-        var file = fileEl.files[0];
-        if (!file) return;
-        statusEl.textContent = 'Reading…';
-        downloadBtn.disabled = true;
-        try {
-          var buf = await file.arrayBuffer();
-          // Satisfactory exports UTF-16LE with a BOM.
-          var text = new TextDecoder('utf-16le').decode(buf);
-          var dataset = normalize.normalizeDocs(JSON.parse(text), { gameVersion: versionEl.value.trim() });
-          var js = normalize.serializeDataset(dataset);
-
-          if (blobUrl) URL.revokeObjectURL(blobUrl);
-          blobUrl = URL.createObjectURL(new Blob([js], { type: 'application/javascript' }));
-          downloadBtn.disabled = false;
-          statusEl.textContent =
-            'OK — ' + Object.keys(dataset.items).length + ' items, ' +
-            Object.keys(dataset.buildings).length + ' buildings, ' +
-            Object.keys(dataset.recipes).length + ' recipes.';
-        } catch (err) {
-          statusEl.innerHTML = '<span class="error">Failed: ' + err.message + '</span>';
-        }
-      });
-
-      downloadBtn.addEventListener('click', function () {
-        if (!blobUrl) return;
-        var a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = 'recipes.js';
-        a.click();
-      });
-    })();
-  </script>
+  <script src="import.js"></script>
 </body>
 </html>

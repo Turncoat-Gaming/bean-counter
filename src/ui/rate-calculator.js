@@ -5,6 +5,12 @@
 
   const fmt = (n) => (Number.isInteger(n) ? String(n) : n.toFixed(2));
 
+  // Escape any value before it goes into innerHTML. Today recipe/item names come
+  // from the trusted committed dataset, but this keeps us safe if a future
+  // feature ever renders user-imported data or bookmark-provided text.
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
   function mountRateCalculator(root, dataset) {
     const { recipeList, itemName } = BC.data;
     const { computeRecipePlan, primaryOutput, perMachineRates } = BC.calculator;
@@ -42,10 +48,10 @@
       const plan = computeRecipePlan(dataset, recipeKey, targetRate);
 
       const flows = (list) =>
-        list.map((f) => '<li><span>' + fmt(f.rate) + '/min</span> ' + itemName(dataset, f.item) + '</li>').join('');
+        list.map((f) => '<li><span>' + fmt(f.rate) + '/min</span> ' + esc(itemName(dataset, f.item)) + '</li>').join('');
 
       resultEl.innerHTML =
-        '<div class="headline"><strong>' + fmt(plan.machines) + '</strong> × ' + plan.buildingName +
+        '<div class="headline"><strong>' + fmt(plan.machines) + '</strong> × ' + esc(plan.buildingName) +
         '<span class="power">' + fmt(plan.power) + ' MW</span></div>' +
         '<div class="cols">' +
         '<div><h3>Inputs</h3><ul>' + (flows(plan.inputs) || '<li class="muted">none</li>') + '</ul></div>' +

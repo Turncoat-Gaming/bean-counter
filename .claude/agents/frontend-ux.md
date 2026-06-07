@@ -21,3 +21,7 @@ Principles:
   works on a phone. The plan must always stay reflected in the shareable bookmark
   + URL hash.
 - Match the existing dark, Satisfactory-orange aesthetic in `src/styles.css`.
+- **Security:** never `innerHTML` untrusted input (bookmark/URL/imported data /
+  error messages) — use `textContent` or `esc()`. No inline `<script>` or
+  `onclick=` handlers; external scripts only, so every page keeps its
+  `script-src 'self'` CSP. Don't weaken `index.html`'s `default-src 'none'`.

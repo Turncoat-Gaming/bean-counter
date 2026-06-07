@@ -38,6 +38,20 @@ straight from the filesystem). No backend, no secrets, nothing to install.
   registering script), listed in `src/data/versions.js`, and referenced from
   `index.html`. Schema is documented in `src/data/SCHEMA.md`.
 
+## Security
+
+Public, client-side, no backend or secrets — so the surface is small, but keep it that way:
+
+- **Never `innerHTML` untrusted input** — anything from a bookmark/URL hash, a
+  user-imported dataset, or `err.message`. Use `textContent`, or escape (see the
+  `esc()` helper in `rate-calculator.js`). Bookmark links are attacker-controllable.
+- **No inline scripts.** Every page sets a CSP `<meta>` with `script-src 'self'`
+  and loads only external `<script src>` files. Don't add inline `<script>` or
+  inline event handlers (`onclick=…`); use `addEventListener`. Keep `index.html`'s
+  CSP strict (`default-src 'none'`).
+- **No secrets, ever** — a public repo keeps them in history forever.
+- Supply-chain hygiene (zero deps / SRI) is part of this too.
+
 ## Workflow
 
 - **Everything on `main`.** No feature branches, no PRs, no issues. Commit and

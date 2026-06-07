@@ -95,6 +95,15 @@ button:hover { filter: brightness(1.05); }
 .muted { color: var(--muted); }
 .error { color: var(--error); }
 
+/* small utilities (used by the tools/test pages so they need no inline styles) */
+.row { display: flex; gap: 0.5rem; }
+.note { margin-top: 1rem; }
+
+/* tests page */
+.testlist li { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+.testlist .ok, .summary.ok { color: #6bdc8a; }
+.testlist .fail, .summary.fail { color: var(--error); }
+
 .footer {
   max-width: 720px;
   margin: 2rem auto;

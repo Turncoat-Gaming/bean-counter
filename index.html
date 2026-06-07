@@ -3,6 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Lock down what can execute/load: only our own scripts and styles, no
+       inline script, no external origins. GitHub Pages can't set HTTP headers,
+       so this is enforced via meta. -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'" />
   <title>bean-counter — a Satisfactory planner</title>
   <link rel="stylesheet" href="src/styles.css" />
 </head>
