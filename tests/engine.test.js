@@ -139,6 +139,20 @@
       const slag = sol.byproducts.find((b) => b.item === 'Desc_Slag_C');
       assertClose(slag.rate, 5); // 1/craft × 5 ingot machines
     }],
+    ['solver tree duplicates shared nodes with per-branch sub-rates', function () {
+      const t = solveChain(solverFixture, 'Recipe_Widget_C', 1).tree;
+      assertEqual(t.item, 'Desc_Widget_C');
+      assertClose(t.rate, 1);
+      assertEqual(t.children.length, 2); // Plate + Rod branches
+      let ingots = 0, oreRaw = 0;
+      (function walk(n) {
+        if (n.item === 'Desc_Ingot_C') ingots++;
+        if (n.item === 'Desc_Ore_C' && n.raw) oreRaw++;
+        (n.children || []).forEach(walk);
+      })(t);
+      assertEqual(ingots, 2);  // Ingot appears under both branches
+      assertEqual(oreRaw, 2);  // raw Ore is a leaf in both
+    }],
     ['per-step recipe override changes the chain', function () {
       const base = solveChain(solverFixture, 'Recipe_Widget_C', 1);
       assertEqual(base.raw.some((r) => r.item === 'Desc_Ore_C'), true);     // default: Ore + Slag

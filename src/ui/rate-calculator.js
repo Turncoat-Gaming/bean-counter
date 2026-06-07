@@ -110,6 +110,31 @@
         '" aria-label="Recipe for ' + esc(itemName(step.item)) + '">' + opts + '</select>';
     }
 
+    // Read-only recipe label for the totals table.
+    function recipeName(step) {
+      const tag = step.alternate ? '<span class="tag">alt</span>' : '';
+      return tag + esc(variantLabel(step.recipeName));
+    }
+
+    // One node of the production tree (nested <ul> gives the indentation).
+    function treeNode(node) {
+      if (node.raw) {
+        return '<li><div class="node"><span class="raw-tag">raw</span> ' +
+          '<span class="item">' + esc(itemName(node.item)) + '</span> ' +
+          '<span class="rate">' + fmt(node.rate) + '/min</span></div></li>';
+      }
+      let html = '<li><div class="node">' +
+        '<span class="mach">' + fmt(node.machines) + '×</span> ' +
+        '<span class="bld">' + esc(node.buildingName) + '</span> ' +
+        '<span class="item">' + esc(itemName(node.item)) + '</span> ' +
+        '<span class="rate">' + fmt(node.rate) + '/min</span> ' +
+        recipeCell(node) + '</div>';
+      if (node.children && node.children.length) {
+        html += '<ul>' + node.children.map(treeNode).join('') + '</ul>';
+      }
+      return html + '</li>';
+    }
+
     function renderChain(targetRate) {
       const sol = solveChain(dataset, active, targetRate, { recipeChoices: choices });
       targetItem = sol.targetItem;
@@ -126,17 +151,19 @@
         .map(([k, m]) => fmt(m) + '× ' + esc(data.buildingName(dataset, k)))
         .join(' · ');
 
+      const tree = '<ul class="tree">' + treeNode(sol.tree) + '</ul>';
+
       const rows = sol.steps.map((s) =>
         '<tr>' +
         '<td class="mach">' + fmt(s.machines) + '×</td>' +
         '<td class="bld">' + esc(s.buildingName) + '</td>' +
         '<td class="item">' + esc(itemName(s.item)) + '</td>' +
         '<td class="rate">' + fmt(s.rate) + '/min</td>' +
-        '<td class="rec">' + recipeCell(s) + '</td>' +
+        '<td class="rec">' + recipeName(s) + '</td>' +
         '</tr>'
       ).join('');
 
-      const stepsTable =
+      const totalsTable =
         '<div class="steps-wrap"><table class="steps"><thead><tr>' +
         '<th class="mach">Qty</th><th>Building</th><th>Item</th><th class="rate">Rate</th><th>Recipe</th>' +
         '</tr></thead><tbody>' + rows + '</tbody></table></div>';
@@ -145,7 +172,10 @@
         '<div class="headline"><strong>' + fmt(sol.totals.machines) + '</strong> machines' +
         '<span class="power">' + fmt(sol.totals.power) + ' MW</span></div>' +
         '<div class="buildings muted">' + buildings + '</div>' +
-        '<h3>Production steps</h3>' + stepsTable +
+        '<h3>Production tree</h3>' +
+        '<p class="muted tree-note">Pick a recipe on any node — it applies to that item across the whole plan.</p>' +
+        tree +
+        '<h3>Totals</h3>' + totalsTable +
         '<div class="cols">' +
         '<div><h3>Raw resources</h3><ul>' + (flowList(sol.raw, (r) => r.rate, (r) => r.item) || '<li class="muted">none</li>') + '</ul></div>' +
         '<div><h3>Byproducts</h3><ul>' + (flowList(sol.byproducts, (b) => b.rate, (b) => b.item) || '<li class="muted">none</li>') + '</ul></div>' +

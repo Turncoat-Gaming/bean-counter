@@ -32,8 +32,12 @@ flag is what stops the solver "producing" them). Solver takes an optional
 `recipeChoices` (item→recipeKey) override map. **Per-step alternate selection**:
 each chain step with alternates shows an inline `<select>`; picks feed
 `recipeChoices` and persist in the bookmark as `c:[recipeKey…]` (item derived from
-the recipe's product). Known simplification still open: byproducts are gross (not
-credited back).
+the recipe's product). Choice is **per item** (one recipe per item globally) so
+totals stay coherent. The chain view shows an **indented production tree** (solver
+returns a literal `tree`; nested `<ul>` for indentation; shared intermediates
+duplicated with per-branch sub-rates) with the per-node selectors, plus a
+read-only aggregated **Totals** table below. Known simplification still open:
+byproducts are gross (not credited back).
 
 Roadmap (evolve simply): byproduct crediting, overclock, multi-line plans,
 version selector growth.

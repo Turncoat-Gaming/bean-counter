@@ -25,12 +25,15 @@ nginx box, a NAS share) by serving the files as-is.
 ## What it does (today)
 
 - **Full-chain solver** — pick a target item + rate and get the whole production
-  chain down to raw resources: machines and power per step, total raw-resource
-  draw, gross byproducts, and a per-building roll-up. Shared intermediates are
-  aggregated correctly. (Toggle to **Single step** for just the one recipe.)
-- **Per-step alternate selection** — any step in the chain that has alternate
-  recipes shows an inline picker, so you can swap the recipe used deep in the
-  tree and watch the whole plan re-solve. Your picks travel in the bookmark.
+  chain down to raw resources. You get an **indented production tree** (so you can
+  see where each branch's demand goes — e.g. screws for the plate vs. screws for
+  the frame), plus an **aggregated totals table**, raw-resource draw, gross
+  byproducts, and a per-building roll-up. (Toggle to **Single step** for just the
+  one recipe.)
+- **Per-step alternate selection** — any node in the tree that has alternate
+  recipes shows an inline picker, so you can swap a recipe deep in the chain and
+  watch the whole plan re-solve. Choice is per item (it applies wherever that item
+  is made), and your picks travel in the bookmark.
 - **Alternate recipes** — the picker stays uncluttered (alternates hidden); when a
   recipe has alternates, a variant selector appears so you can switch between them.
 - **Bookmarks** — every plan encodes into a short string that also lives in the

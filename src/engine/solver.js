@@ -77,6 +77,39 @@
       return d;
     }
 
+    // A literal production tree (duplicates shared intermediates so you can see
+    // where each branch's demand goes). Totals come from the aggregated solve
+    // below and stay exact even if the tree is truncated for size.
+    let nodeBudget = 0;
+    let treeTruncated = false;
+    function buildTree(item, rate, path) {
+      const node = { item, rate };
+      if (nodeBudget++ > 4000) {
+        node.truncated = true;
+        if (!treeTruncated) { treeTruncated = true; warnings.push('Production tree is very large; display truncated (totals are still exact).'); }
+        return node;
+      }
+      const rk = recipeFor(item);
+      if (!rk) { node.raw = true; return node; }
+      if (path.has(item)) { node.cycle = true; return node; }
+      const recipe = dataset.recipes[rk];
+      const out = outputFor(recipe, item);
+      const perMachine = out.amount * (60 / recipe.time);
+      const b = dataset.buildings[recipe.building];
+      node.recipeKey = rk;
+      node.recipeName = recipe.name;
+      node.alternate = !!recipe.alternate;
+      node.building = recipe.building;
+      node.buildingName = b ? b.name : recipe.building;
+      node.machines = perMachine > 0 ? rate / perMachine : 0;
+      node.power = node.machines * (b ? b.power : 0);
+      const crafts = rate / out.amount;
+      const next = new Set(path); next.add(item);
+      node.children = recipe.inputs.map((inp) => buildTree(inp.item, crafts * inp.amount, next));
+      return node;
+    }
+    const tree = buildTree(targetItem, targetRate, new Set());
+
     const perUnit = unit(targetItem, new Set());
     const demand = Object.create(null);
     for (const k in perUnit) demand[k] = perUnit[k] * targetRate;
@@ -118,6 +151,7 @@
 
     return {
       targetItem, targetRecipeKey, targetRate,
+      tree,
       steps, raw, byproducts: byproductList,
       totals: { power: totalPower, machines: totalMachines, byBuilding },
       warnings,

@@ -117,6 +117,19 @@ button:hover { filter: brightness(1.05); }
 /* full-chain solver output */
 .result h3 { margin: 1rem 0 0.4rem; font-size: 0.8rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
 .buildings { margin: -0.25rem 0 0.5rem; font-size: 0.85rem; }
+/* production tree (nested lists give the indentation; border-left draws guides) */
+.tree, .tree ul { list-style: none; margin: 0; padding: 0; }
+.tree { margin: 0.25rem 0 0.75rem; }
+.tree ul { margin-left: 0.6rem; padding-left: 0.85rem; border-left: 1px solid #2c3240; }
+.tree li { margin: 0.12rem 0; }
+.node { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: baseline; }
+.node .mach { color: var(--accent); font-variant-numeric: tabular-nums; }
+.node .bld { color: var(--muted); }
+.node .item { font-weight: 500; }
+.node .rate { color: var(--muted); font-variant-numeric: tabular-nums; }
+.node .raw-tag { color: var(--muted); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; }
+.tree-note { font-size: 0.8rem; margin: 0 0 0.5rem; }
+
 .steps-wrap { overflow-x: auto; }
 .steps { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 .steps th {
