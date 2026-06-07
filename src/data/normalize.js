@@ -75,6 +75,11 @@
     const gameVersion = (opts && opts.gameVersion) || null;
     if (!Array.isArray(docs)) throw new Error('normalizeDocs: expected the parsed Docs.json array');
 
+    // Raw, extractable resources (Iron Ore, Water, Coal, …). These are the leaves
+    // of any production chain. Many also have conversion/unpackage recipes, so we
+    // must flag them explicitly or the solver would try to "produce" them.
+    const resourceClasses = new Set(groupClasses(docs, 'FGResourceDescriptor').map((c) => c.ClassName));
+
     // Items: any class named Desc_*_C with a display name.
     const itemForms = new Map();
     const items = {};
@@ -83,7 +88,9 @@
         const cn = cls.ClassName;
         if (!cn || cn.indexOf('Desc_') !== 0 || !cls.mDisplayName) continue;
         itemForms.set(cn, cls.mForm);
-        items[cn] = { name: cls.mDisplayName, form: normForm(cls.mForm) };
+        const item = { name: cls.mDisplayName, form: normForm(cls.mForm) };
+        if (resourceClasses.has(cn)) item.resource = true;
+        items[cn] = item;
       }
     }
 
@@ -122,7 +129,7 @@
 
     return {
       gameVersion,
-      schema: 2,
+      schema: 3,
       items: sortedObject(items),
       buildings: sortedObject(buildings),
       recipes: sortedObject(recipes),

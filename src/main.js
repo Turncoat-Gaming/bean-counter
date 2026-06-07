@@ -19,7 +19,7 @@
     function select(version) {
       app.innerHTML = '<p class="muted">Loading game data…</p>';
       BC.data.loadDataset(version)
-        .then((dataset) => BC.ui.mountRateCalculator(app, dataset))
+        .then((dataset) => BC.ui.mountPlanner(app, dataset))
         .catch((err) => { app.innerHTML = '<p class="error">Could not load dataset ' + version + ': ' + err.message + '</p>'; });
     }
 

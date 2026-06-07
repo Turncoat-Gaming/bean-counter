@@ -1,26 +1,34 @@
-// rate-calculator.js — the MVP view. Owns DOM only; all math lives in the engine.
-// Classic script: exposes BeanCounter.ui.mountRateCalculator (loads over file://).
+// rate-calculator.js — the planner view. Owns DOM only; all math lives in the
+// engine. Two modes: "Full chain" (recursive solve to raw resources) and
+// "Single step" (just the selected recipe). Classic script: exposes
+// BeanCounter.ui.mountPlanner (loads over file://).
 (function (BC) {
   'use strict';
 
   const fmt = (n) => (Number.isInteger(n) ? String(n) : n.toFixed(2));
 
-  // Escape any value before it goes into innerHTML. Today recipe/item names come
-  // from the trusted committed dataset, but this keeps us safe if a future
-  // feature ever renders user-imported data or bookmark-provided text.
+  // Escape any value before it goes into innerHTML. Recipe/item names come from
+  // the trusted dataset today, but this keeps us safe if user-imported data or
+  // bookmark-provided text is ever rendered.
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   // Drop the "Alternate: " prefix for display — the "alt" tag carries that info.
   const variantLabel = (name) => name.replace(/^Alternate:\s*/, '');
 
-  function mountRateCalculator(root, dataset) {
+  function mountPlanner(root, dataset) {
     const data = BC.data;
     const { computeRecipePlan, primaryOutput, perMachineRates } = BC.calculator;
+    const { solveChain } = BC.solver;
     const { encodePlan, decodePlan } = BC.codec;
+    const itemName = (i) => data.itemName(dataset, i);
 
     root.innerHTML =
       '<form id="calc-form" class="panel">' +
+      '  <div class="modes" role="group" aria-label="Plan mode">' +
+      '    <button type="button" class="chip mode active" data-mode="chain">Full chain</button>' +
+      '    <button type="button" class="chip mode" data-mode="single">Single step</button>' +
+      '  </div>' +
       '  <div class="field"><label for="recipe">Recipe</label><select id="recipe"></select></div>' +
       '  <div class="field"><label for="rate">Target output (per min)</label>' +
       '    <input id="rate" type="number" min="0" step="any" value="60" /></div>' +
@@ -36,21 +44,20 @@
     const recipeSel = root.querySelector('#recipe');
     const rateInput = root.querySelector('#rate');
     const variantsEl = root.querySelector('#variants');
+    const modesEl = root.querySelector('.modes');
     const resultEl = root.querySelector('#result');
     const bookmarkEl = root.querySelector('#bookmark');
 
-    // The currently active recipe (may be an alternate, even though the dropdown
-    // shows its standard representative).
-    let active = null;
+    let active = null;       // current recipe (may be an alternate)
+    let mode = 'chain';
 
-    // Populate the picker (alternates suppressed). Flag entries that have alternates.
     for (const [key, recipe] of data.pickerRecipes(dataset)) {
       const opt = document.createElement('option');
       opt.value = key;
       const per = perMachineRates(recipe).outputs[0].rate;
       const altN = data.alternateCount(dataset, key);
       opt.textContent =
-        recipe.name + ' — ' + fmt(per) + '/min ' + data.itemName(dataset, primaryOutput(recipe).item) +
+        recipe.name + ' — ' + fmt(per) + '/min ' + itemName(primaryOutput(recipe).item) +
         (altN ? '  (+' + altN + ' alt)' : '');
       recipeSel.append(opt);
     }
@@ -58,11 +65,8 @@
     function renderVariants() {
       const variants = data.variantsForRecipe(dataset, active);
       if (variants.length <= 1) { variantsEl.hidden = true; variantsEl.innerHTML = ''; return; }
-
       const altN = data.alternateCount(dataset, active);
-      const head = variants.length + ' recipes' +
-        (altN ? ' · ' + altN + ' alternate' + (altN > 1 ? 's' : '') : '');
-
+      const head = variants.length + ' recipes' + (altN ? ' · ' + altN + ' alternate' + (altN > 1 ? 's' : '') : '');
       let html = '<div class="variants-head">' + head + '</div><div class="chips">';
       for (const k of variants) {
         const r = dataset.recipes[k];
@@ -74,27 +78,58 @@
       variantsEl.hidden = false;
     }
 
-    function render() {
-      const targetRate = Number(rateInput.value) || 0;
+    const flowList = (list, getRate, getItem) =>
+      list.map((x) => '<li><span>' + fmt(getRate(x)) + '/min</span> ' + esc(itemName(getItem(x))) + '</li>').join('');
+
+    function renderSingle(targetRate) {
       const plan = computeRecipePlan(dataset, active, targetRate);
-
-      const flows = (list) =>
-        list.map((f) => '<li><span>' + fmt(f.rate) + '/min</span> ' + esc(data.itemName(dataset, f.item)) + '</li>').join('');
-
       resultEl.innerHTML =
         '<div class="headline"><strong>' + fmt(plan.machines) + '</strong> × ' + esc(plan.buildingName) +
         '<span class="power">' + fmt(plan.power) + ' MW</span></div>' +
         '<div class="cols">' +
-        '<div><h3>Inputs</h3><ul>' + (flows(plan.inputs) || '<li class="muted">none</li>') + '</ul></div>' +
-        '<div><h3>Byproducts</h3><ul>' + (flows(plan.byproducts) || '<li class="muted">none</li>') + '</ul></div>' +
+        '<div><h3>Inputs</h3><ul>' + (flowList(plan.inputs, (f) => f.rate, (f) => f.item) || '<li class="muted">none</li>') + '</ul></div>' +
+        '<div><h3>Byproducts</h3><ul>' + (flowList(plan.byproducts, (f) => f.rate, (f) => f.item) || '<li class="muted">none</li>') + '</ul></div>' +
         '</div>';
+    }
+
+    function renderChain(targetRate) {
+      const sol = solveChain(dataset, active, targetRate);
+
+      const buildings = Object.keys(sol.totals.byBuilding)
+        .map((k) => [k, sol.totals.byBuilding[k]])
+        .sort((a, b) => b[1] - a[1])
+        .map(([k, m]) => fmt(m) + '× ' + esc(data.buildingName(dataset, k)))
+        .join(' · ');
+
+      const steps = sol.steps.map((s) => {
+        const tag = s.alternate ? '<span class="tag">alt</span>' : '';
+        return '<li><span class="mach">' + fmt(s.machines) + '×</span> ' +
+          '<span class="bld">' + esc(s.buildingName) + '</span> ' +
+          '<span class="rname">' + tag + esc(variantLabel(s.recipeName)) + '</span> ' +
+          '<span class="srate">' + fmt(s.rate) + '/min ' + esc(itemName(s.item)) + '</span></li>';
+      }).join('');
+
+      resultEl.innerHTML =
+        '<div class="headline"><strong>' + fmt(sol.totals.machines) + '</strong> machines' +
+        '<span class="power">' + fmt(sol.totals.power) + ' MW</span></div>' +
+        '<div class="buildings muted">' + buildings + '</div>' +
+        '<h3>Production steps</h3><ul class="steps">' + steps + '</ul>' +
+        '<div class="cols">' +
+        '<div><h3>Raw resources</h3><ul>' + (flowList(sol.raw, (r) => r.rate, (r) => r.item) || '<li class="muted">none</li>') + '</ul></div>' +
+        '<div><h3>Byproducts</h3><ul>' + (flowList(sol.byproducts, (b) => b.rate, (b) => b.item) || '<li class="muted">none</li>') + '</ul></div>' +
+        '</div>' +
+        (sol.warnings.length ? '<p class="error">' + sol.warnings.map(esc).join('<br>') + '</p>' : '');
+    }
+
+    function render() {
+      const targetRate = Number(rateInput.value) || 0;
+      if (mode === 'chain') renderChain(targetRate); else renderSingle(targetRate);
 
       const bookmark = encodePlan({ version: dataset.gameVersion, entries: [{ recipeKey: active, targetRate }] });
       bookmarkEl.value = bookmark;
       history.replaceState(null, '', '#' + bookmark);
     }
 
-    // Make `key` the active recipe: sync the dropdown to its representative, redraw.
     function setActive(key) {
       active = key;
       recipeSel.value = data.representativeKey(dataset, key);
@@ -116,12 +151,18 @@
       return false;
     }
 
-    // Changing the dropdown picks that (standard) recipe; alternates reset to it.
     recipeSel.addEventListener('change', () => setActive(recipeSel.value));
     rateInput.addEventListener('input', render);
     variantsEl.addEventListener('click', (e) => {
       const chip = e.target.closest('.chip');
       if (chip) setActive(chip.dataset.key);
+    });
+    modesEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.mode');
+      if (!btn || btn.dataset.mode === mode) return;
+      mode = btn.dataset.mode;
+      for (const b of modesEl.querySelectorAll('.mode')) b.classList.toggle('active', b === btn);
+      render();
     });
     bookmarkEl.addEventListener('change', () => {
       location.hash = bookmarkEl.value.trim();
@@ -135,5 +176,5 @@
   }
 
   BC.ui = BC.ui || {};
-  BC.ui.mountRateCalculator = mountRateCalculator;
+  BC.ui.mountPlanner = mountPlanner;
 })(globalThis.BeanCounter = globalThis.BeanCounter || {});

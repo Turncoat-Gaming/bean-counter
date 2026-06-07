@@ -84,12 +84,24 @@
       .sort((a, b) => a[1].name.localeCompare(b[1].name));
   }
 
+  // All recipe keys whose primary product is `itemKey` (standard first).
+  function recipesForItem(dataset, itemKey) {
+    return productIndex(dataset)[itemKey] || [];
+  }
+
+  // The default recipe to produce an item: its first standard recipe (or first
+  // alternate if that's all there is), else null. Callers handle raw resources.
+  function defaultRecipeKey(dataset, itemKey) {
+    const group = recipesForItem(dataset, itemKey);
+    return group.length ? group[0] : null;
+  }
+
   // All recipe keys that produce the same primary product as `recipeKey`
   // (standard first, then alternates) — i.e. its selectable variants.
   function variantsForRecipe(dataset, recipeKey) {
     const r = dataset.recipes[recipeKey];
     if (!r) return [recipeKey];
-    return productIndex(dataset)[r.outputs[0].item] || [recipeKey];
+    return recipesForItem(dataset, r.outputs[0].item) || [recipeKey];
   }
 
   // How many of a recipe's variants are alternates (for the indicator).
@@ -110,6 +122,7 @@
   BC.data = {
     loadDataset, itemName, buildingName,
     pickerRecipes, variantsForRecipe, alternateCount, representativeKey,
+    recipesForItem, defaultRecipeKey,
   };
   if (typeof module === 'object' && module.exports) module.exports = BC.data;
 })(globalThis.BeanCounter = globalThis.BeanCounter || {});

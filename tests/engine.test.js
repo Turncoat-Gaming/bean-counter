@@ -11,11 +11,13 @@
     require('../src/engine/calculator.js');
     require('../src/engine/plan-codec.js');
     require('../src/engine/dataset.js');
+    require('../src/engine/solver.js');
   }
 
   const BC = globalThis.BeanCounter;
   const { perMachineRates, computeRecipePlan } = BC.calculator;
   const { encodePlan, decodePlan } = BC.codec;
+  const { solveChain } = BC.solver;
   const data = BC.data;
 
   // A tiny self-contained fixture so tests don't depend on the generated dataset.
@@ -109,6 +111,28 @@
       assertEqual(data.representativeKey(altFixture, 'Recipe_CoalLime_C'), 'Recipe_CoalLime_C');
       assertEqual(data.representativeKey(altFixture, 'Recipe_Alternate_PolymerResin_C'), 'Recipe_Alternate_PolymerResin_C');
     }],
+
+    // --- full-chain solver ---
+    ['solver aggregates a shared intermediate (diamond)', function () {
+      const sol = solveChain(solverFixture, 'Recipe_Widget_C', 1);
+      const ingot = sol.steps.find((s) => s.item === 'Desc_Ingot_C');
+      assertClose(ingot.rate, 5);        // 2 (plate) + 3 (rod)
+      assertClose(ingot.machines, 5);
+      assertClose(sol.totals.machines, 11); // 1 widget + 2 plate + 3 rod + 5 ingot
+      assertEqual(sol.steps[0].item, 'Desc_Widget_C'); // target listed first
+    }],
+    ['solver treats raw resources as leaves despite a conversion recipe', function () {
+      const sol = solveChain(solverFixture, 'Recipe_Widget_C', 1);
+      assertEqual(sol.raw.length, 1);
+      assertEqual(sol.raw[0].item, 'Desc_Ore_C');
+      assertClose(sol.raw[0].rate, 5);
+      assertEqual(sol.steps.some((s) => s.item === 'Desc_Ore_C'), false); // never "produced"
+    }],
+    ['solver reports gross byproducts', function () {
+      const sol = solveChain(solverFixture, 'Recipe_Widget_C', 1);
+      const slag = sol.byproducts.find((b) => b.item === 'Desc_Slag_C');
+      assertClose(slag.rate, 5); // 1/craft × 5 ingot machines
+    }],
   ];
 
   // Fixture exercising standard+alternate, multi-standard, and orphan-alt cases.
@@ -128,6 +152,30 @@
       Recipe_CoalIron_C: { name: 'Coal (Iron)', time: 2, building: 'B_C', alternate: false, inputs: [], outputs: [{ item: 'Desc_Coal_C', amount: 1 }] },
       Recipe_CoalLime_C: { name: 'Coal (Limestone)', time: 2, building: 'B_C', alternate: false, inputs: [], outputs: [{ item: 'Desc_Coal_C', amount: 1 }] },
       Recipe_Alternate_PolymerResin_C: { name: 'Alternate: Polymer Resin', time: 2, building: 'B_C', alternate: true, inputs: [], outputs: [{ item: 'Desc_PolymerResin_C', amount: 1 }] },
+    },
+  };
+
+  // Diamond (Widget needs Plate+Rod, both need Ingot), a raw resource with a
+  // conversion recipe, and a byproduct (Slag from the Ingot recipe). All recipes
+  // are 60s so per-machine = amount/min, keeping the arithmetic obvious.
+  const solverFixture = {
+    gameVersion: 'test',
+    items: {
+      Desc_Widget_C: { name: 'Widget', form: 'solid' },
+      Desc_Plate_C: { name: 'Plate', form: 'solid' },
+      Desc_Rod_C: { name: 'Rod', form: 'solid' },
+      Desc_Ingot_C: { name: 'Ingot', form: 'solid' },
+      Desc_Slag_C: { name: 'Slag', form: 'solid' },
+      Desc_Ore_C: { name: 'Ore', form: 'solid', resource: true },
+    },
+    buildings: { B_C: { name: 'Machine', power: 1 } },
+    recipes: {
+      Recipe_Widget_C: { name: 'Widget', time: 60, building: 'B_C', alternate: false, inputs: [{ item: 'Desc_Plate_C', amount: 2 }, { item: 'Desc_Rod_C', amount: 3 }], outputs: [{ item: 'Desc_Widget_C', amount: 1 }] },
+      Recipe_Plate_C: { name: 'Plate', time: 60, building: 'B_C', alternate: false, inputs: [{ item: 'Desc_Ingot_C', amount: 1 }], outputs: [{ item: 'Desc_Plate_C', amount: 1 }] },
+      Recipe_Rod_C: { name: 'Rod', time: 60, building: 'B_C', alternate: false, inputs: [{ item: 'Desc_Ingot_C', amount: 1 }], outputs: [{ item: 'Desc_Rod_C', amount: 1 }] },
+      Recipe_Ingot_C: { name: 'Ingot', time: 60, building: 'B_C', alternate: false, inputs: [{ item: 'Desc_Ore_C', amount: 1 }], outputs: [{ item: 'Desc_Ingot_C', amount: 1 }, { item: 'Desc_Slag_C', amount: 1 }] },
+      // A conversion recipe producing the raw Ore — must be ignored by default.
+      Recipe_ConvertOre_C: { name: 'Ore (Ingot)', time: 60, building: 'B_C', alternate: false, inputs: [{ item: 'Desc_Ingot_C', amount: 1 }], outputs: [{ item: 'Desc_Ore_C', amount: 1 }] },
     },
   };
 

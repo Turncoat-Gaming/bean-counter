@@ -4,7 +4,7 @@
   BC.datasets = BC.datasets || {};
   BC.datasets["1.2"] = {
    "gameVersion": "1.2",
-   "schema": 2,
+   "schema": 3,
    "items": {
     "Desc_AlienDNACapsule_C": {
      "name": "Alien DNA Capsule",
@@ -92,7 +92,8 @@
     },
     "Desc_Coal_C": {
      "name": "Coal",
-     "form": "solid"
+     "form": "solid",
+     "resource": true
     },
     "Desc_CompactedCoal_C": {
      "name": "Compacted Coal",
@@ -320,7 +321,8 @@
     },
     "Desc_LiquidOil_C": {
      "name": "Crude Oil",
-     "form": "liquid"
+     "form": "liquid",
+     "resource": true
     },
     "Desc_LiquidTurboFuel_C": {
      "name": "Turbofuel",
@@ -368,7 +370,8 @@
     },
     "Desc_NitrogenGas_C": {
      "name": "Nitrogen Gas",
-     "form": "gas"
+     "form": "gas",
+     "resource": true
     },
     "Desc_NobeliskCluster_C": {
      "name": "Cluster Nobelisk",
@@ -408,23 +411,28 @@
     },
     "Desc_OreBauxite_C": {
      "name": "Bauxite",
-     "form": "solid"
+     "form": "solid",
+     "resource": true
     },
     "Desc_OreCopper_C": {
      "name": "Copper Ore",
-     "form": "solid"
+     "form": "solid",
+     "resource": true
     },
     "Desc_OreGold_C": {
      "name": "Caterium Ore",
-     "form": "solid"
+     "form": "solid",
+     "resource": true
     },
     "Desc_OreIron_C": {
      "name": "Iron Ore",
-     "form": "solid"
+     "form": "solid",
+     "resource": true
     },
     "Desc_OreUranium_C": {
      "name": "Uranium",
-     "form": "solid"
+     "form": "solid",
+     "resource": true
     },
     "Desc_PackagedAlumina_C": {
      "name": "Packaged Alumina Solution",
@@ -516,7 +524,8 @@
     },
     "Desc_RawQuartz_C": {
      "name": "Raw Quartz",
-     "form": "solid"
+     "form": "solid",
+     "resource": true
     },
     "Desc_RebarGunProjectile_C": {
      "name": "Rebar Gun",
@@ -556,7 +565,8 @@
     },
     "Desc_SAM_C": {
      "name": "SAM",
-     "form": "solid"
+     "form": "solid",
+     "resource": true
     },
     "Desc_Shroom_C": {
      "name": "Bacon Agaric",
@@ -660,11 +670,13 @@
     },
     "Desc_Stone_C": {
      "name": "Limestone",
-     "form": "solid"
+     "form": "solid",
+     "resource": true
     },
     "Desc_Sulfur_C": {
      "name": "Sulfur",
-     "form": "solid"
+     "form": "solid",
+     "resource": true
     },
     "Desc_SulfuricAcid_C": {
      "name": "Sulfuric Acid",
@@ -704,7 +716,8 @@
     },
     "Desc_Water_C": {
      "name": "Water",
-     "form": "liquid"
+     "form": "liquid",
+     "resource": true
     },
     "Desc_Wire_C": {
      "name": "Wire",

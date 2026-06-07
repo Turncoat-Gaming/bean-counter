@@ -22,11 +22,14 @@ same `Docs.json` + version always produces byte-identical output.
 ```jsonc
 {
   "gameVersion": "1.2",   // string tag for the source game version
-  "schema": 2,            // bump if the shape below changes
+  "schema": 3,            // bump if the shape below changes
 
   "items": {              // every craftable/raw item, keyed by class name
-    "Desc_OreIron_C": { "name": "Iron Ore", "form": "solid" }
+    "Desc_OreIron_C": { "name": "Iron Ore", "form": "solid", "resource": true }
     // form: "solid" | "liquid" | "gas"
+    // resource: true only for raw/extractable resources (the chain's leaves).
+    //   Omitted otherwise. Many resources also have conversion/unpackage
+    //   recipes, so the solver relies on this flag to treat them as raw.
   },
 
   "buildings": {          // production machines, keyed by class name
