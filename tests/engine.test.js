@@ -106,6 +106,12 @@
       assertEqual(v[0], 'Recipe_IngotIron_C');          // standard leads
       assertEqual(data.alternateCount(altFixture, 'Recipe_IngotIron_C'), 2);
     }],
+    // The chain's per-step selector keys off recipesForItem(<item>); guard that
+    // it returns the whole group for an item key (a recipe key must NOT be passed).
+    ['recipesForItem returns all variants for an item key', function () {
+      assertEqual(data.recipesForItem(altFixture, 'Desc_IronIngot_C').length, 3);
+      assertEqual(data.recipesForItem(altFixture, 'Recipe_IngotIron_C').length, 0); // recipe key -> not an item
+    }],
     ['representative of an alternate is its standard', function () {
       assertEqual(data.representativeKey(altFixture, 'Recipe_Alternate_PureIron_C'), 'Recipe_IngotIron_C');
       assertEqual(data.representativeKey(altFixture, 'Recipe_CoalLime_C'), 'Recipe_CoalLime_C');

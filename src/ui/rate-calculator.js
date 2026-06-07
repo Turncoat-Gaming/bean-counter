@@ -98,7 +98,7 @@
     // The recipe cell for a step: a <select> of variants if there's more than one
     // (so it's selectable), otherwise just the name.
     function recipeCell(step) {
-      const variants = data.variantsForRecipe(dataset, step.item);
+      const variants = data.recipesForItem(dataset, step.item);
       if (variants.length > 1) {
         const opts = variants.map((k) => {
           const r = dataset.recipes[k];
