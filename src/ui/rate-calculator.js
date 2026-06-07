@@ -95,21 +95,19 @@
         '</div>';
     }
 
-    // The recipe cell for a step: a <select> of variants if there's more than one
-    // (so it's selectable), otherwise just the name.
+    // The recipe cell for a step: a <select> of variants where there's a choice,
+    // otherwise empty (the Item column already names what's produced). This makes
+    // the Recipe column the "where can I pick an alternate" column.
     function recipeCell(step) {
       const variants = data.recipesForItem(dataset, step.item);
-      if (variants.length > 1) {
-        const opts = variants.map((k) => {
-          const r = dataset.recipes[k];
-          const lbl = variantLabel(r.name) + (r.alternate ? ' (alt)' : '');
-          return '<option value="' + esc(k) + '"' + (k === step.recipeKey ? ' selected' : '') + '>' + esc(lbl) + '</option>';
-        }).join('');
-        return '<select class="step-recipe" data-item="' + esc(step.item) +
-          '" aria-label="Recipe for ' + esc(itemName(step.item)) + '">' + opts + '</select>';
-      }
-      const tag = step.alternate ? '<span class="tag">alt</span>' : '';
-      return '<span class="rname">' + tag + esc(variantLabel(step.recipeName)) + '</span>';
+      if (variants.length <= 1) return '';
+      const opts = variants.map((k) => {
+        const r = dataset.recipes[k];
+        const lbl = variantLabel(r.name) + (r.alternate ? ' (alt)' : '');
+        return '<option value="' + esc(k) + '"' + (k === step.recipeKey ? ' selected' : '') + '>' + esc(lbl) + '</option>';
+      }).join('');
+      return '<select class="step-recipe" data-item="' + esc(step.item) +
+        '" aria-label="Recipe for ' + esc(itemName(step.item)) + '">' + opts + '</select>';
     }
 
     function renderChain(targetRate) {
@@ -128,18 +126,26 @@
         .map(([k, m]) => fmt(m) + '× ' + esc(data.buildingName(dataset, k)))
         .join(' · ');
 
-      const steps = sol.steps.map((s) =>
-        '<li><span class="mach">' + fmt(s.machines) + '×</span> ' +
-        '<span class="bld">' + esc(s.buildingName) + '</span> ' +
-        recipeCell(s) +
-        ' <span class="srate">' + fmt(s.rate) + '/min ' + esc(itemName(s.item)) + '</span></li>'
+      const rows = sol.steps.map((s) =>
+        '<tr>' +
+        '<td class="mach">' + fmt(s.machines) + '×</td>' +
+        '<td class="bld">' + esc(s.buildingName) + '</td>' +
+        '<td class="item">' + esc(itemName(s.item)) + '</td>' +
+        '<td class="rate">' + fmt(s.rate) + '/min</td>' +
+        '<td class="rec">' + recipeCell(s) + '</td>' +
+        '</tr>'
       ).join('');
+
+      const stepsTable =
+        '<div class="steps-wrap"><table class="steps"><thead><tr>' +
+        '<th class="mach">Qty</th><th>Building</th><th>Item</th><th class="rate">Rate</th><th>Recipe</th>' +
+        '</tr></thead><tbody>' + rows + '</tbody></table></div>';
 
       resultEl.innerHTML =
         '<div class="headline"><strong>' + fmt(sol.totals.machines) + '</strong> machines' +
         '<span class="power">' + fmt(sol.totals.power) + ' MW</span></div>' +
         '<div class="buildings muted">' + buildings + '</div>' +
-        '<h3>Production steps</h3><ul class="steps">' + steps + '</ul>' +
+        '<h3>Production steps</h3>' + stepsTable +
         '<div class="cols">' +
         '<div><h3>Raw resources</h3><ul>' + (flowList(sol.raw, (r) => r.rate, (r) => r.item) || '<li class="muted">none</li>') + '</ul></div>' +
         '<div><h3>Byproducts</h3><ul>' + (flowList(sol.byproducts, (b) => b.rate, (b) => b.item) || '<li class="muted">none</li>') + '</ul></div>' +
