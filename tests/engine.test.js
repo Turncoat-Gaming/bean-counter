@@ -210,6 +210,44 @@
       assertEqual(pNode.recyclable, false);  // P (target) is nobody's byproduct
     }],
 
+    // --- external-input boundary cut ---
+    ['providing an item turns it into a line input and cuts its sub-chain', function () {
+      const sol = solveChain(solverFixture, 'Recipe_Widget_C', 1, { provided: ['Desc_Ingot_C'] });
+      assertEqual(sol.lineInputs.length, 1);
+      assertEqual(sol.lineInputs[0].item, 'Desc_Ingot_C');
+      assertClose(sol.lineInputs[0].rate, 5);                    // 2 (plate) + 3 (rod)
+      assertEqual(sol.steps.some((s) => s.item === 'Desc_Ingot_C'), false);
+      assertClose(sol.totals.machines, 6);                       // Widget + Plate + Rod, no Ingot
+      assertEqual(sol.raw.length, 0);                            // Ore was only for Ingot
+      assertEqual(sol.byproducts.length, 0);                     // Slag came from the Ingot recipe
+    }],
+    ['a provided item is credited like raw (byproduct offsets the import)', function () {
+      const plain = solveChain(recycleProdFixture, 'Recipe_P_C', 1, { provided: ['Desc_B_C'] });
+      assertClose(plain.lineInputs.find((i) => i.item === 'Desc_B_C').rate, 1); // Q needs 1 B, imported
+      assertEqual(plain.raw.some((r) => r.item === 'Desc_R_C'), false);         // B no longer built here
+      assertClose(plain.byproducts.find((b) => b.item === 'Desc_B_C').surplus, 2); // uncredited
+
+      const sol = solveChain(recycleProdFixture, 'Recipe_P_C', 1, { provided: ['Desc_B_C'], recycle: ['Desc_B_C'] });
+      assertClose(sol.lineInputs.find((i) => i.item === 'Desc_B_C').rate, 0);   // byproduct covers the import
+      const b = sol.byproducts.find((x) => x.item === 'Desc_B_C');
+      assertClose(b.credited, 1); assertClose(b.surplus, 1);
+    }],
+    ['tree annotates provided leaves and which nodes can be provided', function () {
+      const sol = solveChain(solverFixture, 'Recipe_Widget_C', 1, { provided: ['Desc_Ingot_C'] });
+      let ingot = null, widget = null, oreSeen = false;
+      (function walk(n) {
+        if (n.item === 'Desc_Ingot_C' && !ingot) ingot = n;
+        if (n.item === 'Desc_Widget_C') widget = n;
+        if (n.item === 'Desc_Ore_C') oreSeen = true;
+        (n.children || []).forEach(walk);
+      })(sol.tree);
+      assertEqual(ingot.provided, true);
+      assertEqual(!!ingot.children, false);   // sub-chain stops at the provided node
+      assertEqual(ingot.canProvide, true);
+      assertEqual(widget.canProvide, false);  // the target can't be sourced externally
+      assertEqual(oreSeen, false);            // Ore is below the cut, so it's gone from the tree
+    }],
+
     // --- bookmark carries deep choices ---
     ['bookmark round-trips with choiceKeys', function () {
       const plan = { version: '1.2', entries: [{ recipeKey: 'Recipe_W_C', targetRate: 60, choiceKeys: ['Recipe_A_C', 'Recipe_B_C'] }] };
@@ -217,16 +255,23 @@
       assertEqual(back.entries[0].choiceKeys.length, 2);
       assertEqual(back.entries[0].choiceKeys[0], 'Recipe_A_C');
     }],
-    ['bookmark without choices decodes to empty choiceKeys', function () {
+    ['bookmark without choices decodes to empty lists', function () {
       const back = decodePlan(encodePlan({ version: '1.2', entries: [{ recipeKey: 'Recipe_W_C', targetRate: 1 }] }));
       assertEqual(back.entries[0].choiceKeys.length, 0);
       assertEqual(back.entries[0].recycleItems.length, 0);
+      assertEqual(back.entries[0].providedItems.length, 0);
     }],
     ['bookmark round-trips recycleItems', function () {
       const plan = { version: '1.2', entries: [{ recipeKey: 'Recipe_A_C', targetRate: 1, recycleItems: ['Desc_W_C', 'Desc_B_C'] }] };
       const back = decodePlan(encodePlan(plan));
       assertEqual(back.entries[0].recycleItems.length, 2);
       assertEqual(back.entries[0].recycleItems[0], 'Desc_W_C');
+    }],
+    ['bookmark round-trips providedItems', function () {
+      const plan = { version: '1.2', entries: [{ recipeKey: 'Recipe_A_C', targetRate: 1, providedItems: ['Desc_X_C'] }] };
+      const back = decodePlan(encodePlan(plan));
+      assertEqual(back.entries[0].providedItems.length, 1);
+      assertEqual(back.entries[0].providedItems[0], 'Desc_X_C');
     }],
   ];
 

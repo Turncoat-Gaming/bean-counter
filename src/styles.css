@@ -182,11 +182,18 @@ button:hover { filter: brightness(1.05); }
 .cols li span { color: var(--accent); font-variant-numeric: tabular-nums; }
 .cols li span.muted { color: var(--muted); }
 
-/* recycle ♻ toggle on a production-tree node */
-.recycle { cursor: pointer; user-select: none; font-size: 0.85rem; color: var(--muted); white-space: nowrap; }
-.recycle input { vertical-align: -1px; margin: 0 0.15rem 0 0; accent-color: var(--accent); cursor: pointer; }
-.node .recycle { margin-left: 0.4rem; }
-.node .recycle:has(:checked) { color: var(--accent); }
+/* per-node ♻ recycle and 📦 supply-externally toggles */
+.recycle, .provide { cursor: pointer; user-select: none; font-size: 0.85rem; color: var(--muted); white-space: nowrap; }
+.recycle input, .provide input { vertical-align: -1px; margin: 0 0.15rem 0 0; accent-color: var(--accent); cursor: pointer; }
+.node .recycle, .node .provide { margin-left: 0.4rem; }
+.node .recycle:has(:checked), .node .provide:has(:checked) { color: var(--accent); }
+
+/* a tree node sourced from another line (📦) */
+.node .input-tag { color: var(--accent); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* standalone flow list (Required inputs) — same look as the .cols lists */
+.cols-list { margin: 0 0 1rem; padding: 0; list-style: none; display: grid; gap: 0.25rem; }
+.cols-list li span { color: var(--accent); font-variant-numeric: tabular-nums; }
 
 /* leftover byproduct you must sink or loop; fluids/gases can't go to the sink */
 .byproducts span.surplus { color: var(--accent); }

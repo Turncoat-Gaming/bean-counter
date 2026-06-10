@@ -30,6 +30,10 @@ nginx box, a NAS share) by serving the files as-is.
   the frame), plus an **aggregated totals table**, raw-resource draw,
   byproducts, and a per-building roll-up. Tree nodes are collapsible. (Toggle to
   **Single step** for just the one recipe.)
+- **External inputs (boundary cut)** — tick **📦** on any tree node to source that
+  item from elsewhere instead of building it. The chain stops there and the item is
+  listed under **Required inputs** (the line's interface), credited like raw. This
+  is the seam for composing lines/factories later.
 - **Byproduct crediting** — any node in the production tree whose item also comes
   out of another recipe as a byproduct gets a **♻ reuse** toggle. Tick it and that
   byproduct is credited against demand, cutting machines and raw draw; leftover

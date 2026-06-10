@@ -52,9 +52,11 @@
     let mode = 'chain';
     let choices = {};         // per-step override: item -> recipeKey (deep alternates)
     let recycle = new Set();  // items whose byproducts are credited back (recycling on)
+    let provided = new Set(); // items sourced externally (line inputs; chain stops there)
     let targetItem = null;    // product of `active`, set during chain render
     let bookmarkChoiceKeys = []; // choices actually used by the current chain
     let bookmarkRecycle = [];    // recycle toggles in play in the current chain
+    let bookmarkProvided = [];   // provided items in play in the current chain
     let collapsedPaths = new Set(); // tree nodes the user has collapsed (by path)
 
     for (const [key, recipe] of data.pickerRecipes(dataset)) {
@@ -128,6 +130,15 @@
         (x.recycling ? ' checked' : '') + '> ♻</label>';
     }
 
+    // A "📦 supply externally" checkbox: stop the chain here and treat the item as
+    // a line input (sourced from another line). Only on real intermediates.
+    function provideToggle(x) {
+      if (!x.canProvide) return '';
+      return '<label class="provide" title="Source this item from another line">' +
+        '<input type="checkbox" class="provide-toggle" data-item="' + esc(x.item) + '"' +
+        (x.provided ? ' checked' : '') + '> 📦</label>';
+    }
+
     // One node of the production tree (nested <ul> gives the indentation).
     // `path` is the unique route from the root, so collapse state survives
     // re-renders and applies to the right occurrence of a shared item.
@@ -137,17 +148,20 @@
         ? '<button type="button" class="tree-toggle" data-path="' + esc(path) + '" aria-label="Collapse or expand"></button>'
         : '<span class="tree-toggle empty"></span>';
 
-      const body = node.raw
-        ? toggle + '<span class="raw-tag">raw</span> ' +
-          '<span class="item">' + esc(itemName(node.item)) + '</span> ' +
-          '<span class="rate">' + fmt(node.rate) + '/min</span> ' +
-          recycleToggle(node)
-        : toggle +
+      const name = '<span class="item">' + esc(itemName(node.item)) + '</span> ' +
+        '<span class="rate">' + fmt(node.rate) + '/min</span> ';
+      let body;
+      if (node.provided) {                  // sourced from another line — a leaf
+        body = toggle + '<span class="input-tag">input</span> ' + name +
+          recycleToggle(node) + provideToggle(node);
+      } else if (node.raw) {                 // mined/extracted — a leaf
+        body = toggle + '<span class="raw-tag">raw</span> ' + name + recycleToggle(node);
+      } else {                               // built here
+        body = toggle +
           '<span class="mach">' + fmt(node.machines) + '×</span> ' +
           '<span class="bld">' + esc(node.buildingName) + '</span> ' +
-          '<span class="item">' + esc(itemName(node.item)) + '</span> ' +
-          '<span class="rate">' + fmt(node.rate) + '/min</span> ' +
-          recipeCell(node) + recycleToggle(node);
+          name + recipeCell(node) + recycleToggle(node) + provideToggle(node);
+      }
 
       const collapsed = hasKids && collapsedPaths.has(path);
       let html = '<li class="' + (collapsed ? 'collapsed' : '') + '"><div class="node">' + body + '</div>';
@@ -158,7 +172,7 @@
     }
 
     function renderChain(targetRate) {
-      const sol = solveChain(dataset, active, targetRate, { recipeChoices: choices, recycle: [...recycle] });
+      const sol = solveChain(dataset, active, targetRate, { recipeChoices: choices, recycle: [...recycle], provided: [...provided] });
       targetItem = sol.targetItem;
 
       // Which overrides are actually in play (for a tidy bookmark).
@@ -172,6 +186,10 @@
       sol.steps.forEach((s) => { if (s.recyclable) recyclableNow.add(s.item); });
       sol.raw.forEach((r) => { if (r.recyclable) recyclableNow.add(r.item); });
       bookmarkRecycle = [...recycle].filter((it) => recyclableNow.has(it));
+
+      // Provided items actually cut from this chain (surfaced as line inputs).
+      const providedNow = new Set(sol.lineInputs.map((i) => i.item));
+      bookmarkProvided = [...provided].filter((it) => providedNow.has(it));
 
       const buildings = Object.keys(sol.totals.byBuilding)
         .map((k) => [k, sol.totals.byBuilding[k]])
@@ -200,6 +218,16 @@
         '<li><span>' + fmt(r.rate) + '/min</span> ' + esc(itemName(r.item)) + '</li>'
       ).join('') || '<li class="muted">none</li>';
 
+      // The line's external interface: items sourced from another line (📦 in tree).
+      // Shown only when there are any — it's the seam line-composition will use.
+      const lineInputsSection = sol.lineInputs.length
+        ? '<h3>Required inputs</h3>' +
+          '<p class="muted tree-note">Sourced from another line. Provide these to feed this one.</p>' +
+          '<ul class="cols-list">' + sol.lineInputs.map((i) =>
+            '<li><span>' + fmt(i.rate) + '/min</span> ' + esc(itemName(i.item)) + '</li>'
+          ).join('') + '</ul>'
+        : '';
+
       // Byproducts: surplus is what you must sink/loop; show reused amount too.
       // Fluids/gases can't go to the AWESOME Sink, so their surplus is flagged hard.
       const byproductList = sol.byproducts.map((b) => {
@@ -220,10 +248,11 @@
         '<span class="power">' + fmt(sol.totals.power) + ' MW</span></div>' +
         '<div class="buildings muted">' + buildings + '</div>' +
         '<h3>Production tree</h3>' +
-        '<p class="muted tree-note">Pick a recipe on any node — it applies to that item across the whole plan. Tick ♻ to reuse that item\'s byproduct (credits against demand, cutting machines and raw draw). The tree shows gross flow; Totals below reflect any recycling.</p>' +
+        '<p class="muted tree-note">On any node: pick a recipe (applies to that item across the plan), tick ♻ to reuse its byproduct, or 📦 to source it from another line (stops the chain there). The tree shows gross flow; Totals below reflect recycling and external inputs.</p>' +
         tree +
         '<h3>Totals</h3>' +
         totalsTable +
+        lineInputsSection +
         '<div class="cols">' +
         '<div><h3>Raw resources</h3><ul>' + rawList + '</ul></div>' +
         '<div><h3>Byproducts</h3><ul class="byproducts">' + byproductList + '</ul></div>' +
@@ -237,7 +266,8 @@
 
       const choiceKeys = mode === 'chain' ? bookmarkChoiceKeys : [];
       const recycleItems = mode === 'chain' ? bookmarkRecycle : [];
-      const bookmark = encodePlan({ version: dataset.gameVersion, entries: [{ recipeKey: active, targetRate, choiceKeys, recycleItems }] });
+      const providedItems = mode === 'chain' ? bookmarkProvided : [];
+      const bookmark = encodePlan({ version: dataset.gameVersion, entries: [{ recipeKey: active, targetRate, choiceKeys, recycleItems, providedItems }] });
       bookmarkEl.value = bookmark;
       history.replaceState(null, '', '#' + bookmark);
     }
@@ -272,7 +302,8 @@
           rateInput.value = first.targetRate;
           applyChoiceKeys(first.choiceKeys);
           recycle = new Set(first.recycleItems || []);
-          if ((first.choiceKeys && first.choiceKeys.length) || recycle.size) setMode('chain');
+          provided = new Set(first.providedItems || []);
+          if ((first.choiceKeys && first.choiceKeys.length) || recycle.size || provided.size) setMode('chain');
           setActive(first.recipeKey);
           return true;
         }
@@ -286,11 +317,17 @@
       const chip = e.target.closest('.chip');
       if (chip) setActive(chip.dataset.key);
     });
-    // Per-step recipe selection (deep alternates) and recycle toggles.
+    // Per-step recipe selection (deep alternates), recycle and supply-externally toggles.
     resultEl.addEventListener('change', (e) => {
       const rec = e.target.closest('.recycle-toggle');
       if (rec) {
         if (rec.checked) recycle.add(rec.dataset.item); else recycle.delete(rec.dataset.item);
+        render();
+        return;
+      }
+      const prov = e.target.closest('.provide-toggle');
+      if (prov) {
+        if (prov.checked) provided.add(prov.dataset.item); else provided.delete(prov.dataset.item);
         render();
         return;
       }
