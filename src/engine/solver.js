@@ -255,6 +255,94 @@
     };
   }
 
-  BC.solver = { solveChain };
+  // rollUpFactory — aggregate several independently-solved lines into one factory
+  // view. Pure. Each line is normalized (by the caller) to:
+  //   { target, supplies:[{item,rate}], demands:[{item,rate}], raw:[{item,rate}],
+  //     power, machines, byBuilding }
+  // where `supplies` are what the line offers (its target output + any byproduct
+  // surplus), `demands` are its external inputs (the 📦 line inputs), and `raw` is
+  // its mined draw. `target` is the line's product item (so net-positive supply of
+  // it is flagged a factory product rather than a stray byproduct).
+  //
+  // Lines still solve independently; this only *nets* supply against demand by item
+  // key and reports who feeds whom. An item's demand is satisfied internally when
+  // some other line supplies it; greedy allocation (producers in line order) turns
+  // that into concrete line→line routes — the view that drives physical layout.
+  // Many producers/consumers of one item resolve to several routes, which is the
+  // cue to split a line.
+  function rollUpFactory(dataset, lines) {
+    function label(item) { return (dataset.items[item] && dataset.items[item].name) || item; }
+    const byName = (a, b) => label(a.item).localeCompare(label(b.item));
+
+    let power = 0, machines = 0;
+    const byBuilding = Object.create(null);
+    const rawAgg = Object.create(null);
+    const producers = Object.create(null); // item -> [{line, rate}] in line order
+    const consumers = Object.create(null); // item -> [{line, rate}] in line order
+    const targets = new Set();              // items that are some line's product
+
+    lines.forEach((ln, i) => {
+      power += ln.power || 0;
+      machines += ln.machines || 0;
+      for (const b of Object.keys(ln.byBuilding || {})) byBuilding[b] = (byBuilding[b] || 0) + ln.byBuilding[b];
+      for (const r of ln.raw || []) rawAgg[r.item] = (rawAgg[r.item] || 0) + r.rate;
+      if (ln.target) targets.add(ln.target);
+      for (const s of ln.supplies || []) {
+        if (s.rate <= 1e-9) continue;
+        (producers[s.item] = producers[s.item] || []).push({ line: i, rate: s.rate });
+      }
+      for (const d of ln.demands || []) {
+        if (d.rate <= 1e-9) continue;
+        (consumers[d.item] = consumers[d.item] || []).push({ line: i, rate: d.rate });
+      }
+    });
+
+    const routes = [];     // {item, from, to, rate}; merged by (item,from,to) below
+    const outputs = [];    // net supply > 0
+    const unmet = [];      // net demand > 0 (still sourced externally)
+    const items = new Set([...Object.keys(producers), ...Object.keys(consumers)]);
+    for (const item of items) {
+      const prod = producers[item] || [];
+      const cons = consumers[item] || [];
+      const totalProd = prod.reduce((s, p) => s + p.rate, 0);
+      const totalCons = cons.reduce((s, c) => s + c.rate, 0);
+
+      // Greedy allocate supply to demand, both in line order, to build routes.
+      const pr = prod.map((p) => ({ line: p.line, rem: p.rate }));
+      let pi = 0;
+      for (const c of cons) {
+        let need = c.rate;
+        while (need > 1e-9 && pi < pr.length) {
+          const give = Math.min(need, pr[pi].rem);
+          if (give > 1e-9 && pr[pi].line !== c.line) routes.push({ item, from: pr[pi].line, to: c.line, rate: give });
+          pr[pi].rem -= give;
+          need -= give;
+          if (pr[pi].rem <= 1e-9) pi++;
+        }
+      }
+
+      const net = totalProd - totalCons;
+      if (net > 1e-9) outputs.push({ item, rate: net, product: targets.has(item) });
+      else if (net < -1e-9) unmet.push({ item, rate: -net });
+    }
+
+    // Merge routes that share (item, from, to) so each feed shows as one edge.
+    const merged = [];
+    const seen = new Map();
+    for (const r of routes) {
+      const k = r.item + ' ' + r.from + ' ' + r.to;
+      if (seen.has(k)) seen.get(k).rate += r.rate;
+      else { const c = { item: r.item, from: r.from, to: r.to, rate: r.rate }; seen.set(k, c); merged.push(c); }
+    }
+
+    const raw = Object.keys(rawAgg).map((item) => ({ item, rate: rawAgg[item] })).sort(byName);
+    outputs.sort(byName);
+    unmet.sort(byName);
+    merged.sort((a, b) => byName(a, b) || a.from - b.from || a.to - b.to);
+
+    return { power, machines, byBuilding, raw, routes: merged, outputs, unmet };
+  }
+
+  BC.solver = { solveChain, rollUpFactory };
   if (typeof module === 'object' && module.exports) module.exports = BC.solver;
 })(globalThis.BeanCounter = globalThis.BeanCounter || {});

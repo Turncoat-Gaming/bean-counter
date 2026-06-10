@@ -30,10 +30,17 @@ nginx box, a NAS share) by serving the files as-is.
   the frame), plus an **aggregated totals table**, raw-resource draw,
   byproducts, and a per-building roll-up. Tree nodes are collapsible. (Toggle to
   **Single step** for just the one recipe.)
+- **Multiple lines (one factory)** — a plan can hold several **lines** stacked in
+  one doc (**+ Add line**). Each solves independently, and a **Factory summary**
+  nets them together: it shows **internal routes** (which line feeds which, and how
+  much — the cue for belts/pipes and when to split a line), anything still
+  **required externally**, the factory's **outputs** and **surplus**, and combined
+  raw/power. Lines feed each other automatically by item — a line's 📦 inputs are
+  satisfied by any line that produces (or has surplus of) that item.
 - **External inputs (boundary cut)** — tick **📦** on any tree node to source that
   item from elsewhere instead of building it. The chain stops there and the item is
   listed under **Required inputs** (the line's interface), credited like raw. This
-  is the seam for composing lines/factories later.
+  is the seam that lets lines feed one another (above).
 - **Byproduct crediting** — any node in the production tree whose item also comes
   out of another recipe as a byproduct gets a **♻ reuse** toggle. Tick it and that
   byproduct is credited against demand, cutting machines and raw draw; leftover
@@ -50,7 +57,8 @@ nginx box, a NAS share) by serving the files as-is.
   URL. Copy the link (or the string) to save or share a plan; paste it to
   restore. Fully client-side, reversible, no server.
 
-Planned next: overclock/clock-speed and multi-line plans.
+Planned next: explicit per-edge routing (choose among producers), multiple
+factories with a tab switcher, and overclock/clock-speed.
 
 ## Project layout
 

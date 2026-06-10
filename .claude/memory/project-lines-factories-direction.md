@@ -31,9 +31,24 @@ item keys); `expandRecipe()` makes provided items leaves; they surface in a new
 data (provide Iron Plate + Screws → Reinforced Iron Plate line declares its inputs,
 14→2 machines).
 
-**Next increments (not built):** multiple lines per doc, each solved independently;
-route one line's output to satisfy another's `lineInputs`; factory-wide roll-up
-(sum raw/power/byproducts); then factories grouping lines.
+**Multiple lines per doc — SHIPPED 2026-06-10.** A doc now holds many *lines*
+(one factory), shown as a stacked accordion (tabs are reserved for *factories*
+later). Each line is the old single-plan state and solves independently. New pure
+`BC.solver.rollUpFactory(dataset, summaries)` nets the lines by item key: it sums
+power/machines/byBuilding/raw and emits **line→line routes** (greedy producer
+allocation in line order — deterministic; many producers/consumers resolve to
+several routes, the cue to split a line), `outputs` (net>0, `product` flag if the
+item is some line's target), and `unmet` (net<0, still external). UI builds a
+normalized summary per line `{target,supplies,demands,raw,power,machines,byBuilding}`
+(supplies = target + byproduct surplus; demands = 📦 `lineInputs`) for both chain
+and single-step modes. Routing is **automatic by item** — no explicit edge UI yet.
+Codec needed no change (the `entries[]` array already existed). Verified on real
+1.2 data: RIP line @5/min with Iron Plate+Screws 📦, plus Iron Plate and Screws
+lines → routes Iron Plate→RIP, Screws→RIP, no unmet, raw = Iron Ore only.
+
+**Next increments (not built):** explicit per-edge link control (choose among
+multiple producers, partial ratios); multiple *factories* with a tab switcher and
+cross-factory feeds.
 
 Builds on [[project-bean-counter]]; engine constraints in
 [[feedback-no-npm-supply-chain]].

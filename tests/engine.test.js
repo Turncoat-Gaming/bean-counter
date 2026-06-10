@@ -17,7 +17,7 @@
   const BC = globalThis.BeanCounter;
   const { perMachineRates, computeRecipePlan } = BC.calculator;
   const { encodePlan, decodePlan } = BC.codec;
-  const { solveChain } = BC.solver;
+  const { solveChain, rollUpFactory } = BC.solver;
   const data = BC.data;
 
   // A tiny self-contained fixture so tests don't depend on the generated dataset.
@@ -272,6 +272,63 @@
       const back = decodePlan(encodePlan(plan));
       assertEqual(back.entries[0].providedItems.length, 1);
       assertEqual(back.entries[0].providedItems[0], 'Desc_X_C');
+    }],
+    ['bookmark round-trips a multi-line plan (one per entry)', function () {
+      const plan = { version: '1.2', entries: [
+        { recipeKey: 'Recipe_A_C', targetRate: 60, choiceKeys: ['Recipe_X_C'] },
+        { recipeKey: 'Recipe_B_C', targetRate: 30, recycleItems: ['Desc_W_C'] },
+        { recipeKey: 'Recipe_C_C', targetRate: 15, providedItems: ['Desc_Y_C'] },
+      ] };
+      const back = decodePlan(encodePlan(plan));
+      assertEqual(back.entries.length, 3);
+      assertEqual(back.entries[0].recipeKey, 'Recipe_A_C');
+      assertEqual(back.entries[0].choiceKeys[0], 'Recipe_X_C');
+      assertClose(back.entries[1].targetRate, 30);
+      assertEqual(back.entries[1].recycleItems[0], 'Desc_W_C');
+      assertEqual(back.entries[2].providedItems[0], 'Desc_Y_C');
+    }],
+
+    // --- factory roll-up (multiple lines) ---
+    ['roll-up routes one line\'s output to another\'s input; sums totals', function () {
+      // Line 0 makes Ingot (from Ore); line 1 makes Widget needing 5 Ingot externally.
+      const ingotLine = { target: 'Desc_Ingot_C', supplies: [{ item: 'Desc_Ingot_C', rate: 5 }], demands: [], raw: [{ item: 'Desc_Ore_C', rate: 5 }], power: 5, machines: 5, byBuilding: { B_C: 5 } };
+      const widgetLine = { target: 'Desc_Widget_C', supplies: [{ item: 'Desc_Widget_C', rate: 1 }], demands: [{ item: 'Desc_Ingot_C', rate: 5 }], raw: [], power: 6, machines: 6, byBuilding: { B_C: 6 } };
+      const roll = rollUpFactory(solverFixture, [ingotLine, widgetLine]);
+
+      assertEqual(roll.routes.length, 1);
+      assertEqual(roll.routes[0].item, 'Desc_Ingot_C');
+      assertEqual(roll.routes[0].from, 0);
+      assertEqual(roll.routes[0].to, 1);
+      assertClose(roll.routes[0].rate, 5);
+      assertEqual(roll.unmet.length, 0);                 // Ingot demand met internally
+      assertClose(roll.machines, 11);
+      assertClose(roll.power, 11);
+      assertClose(roll.byBuilding.B_C, 11);
+      assertClose(roll.raw.find((r) => r.item === 'Desc_Ore_C').rate, 5);
+      const widget = roll.outputs.find((o) => o.item === 'Desc_Widget_C');
+      assertClose(widget.rate, 1); assertEqual(widget.product, true);
+      assertEqual(roll.outputs.some((o) => o.item === 'Desc_Ingot_C'), false); // net 0, not an output
+    }],
+    ['roll-up flags an input no line supplies as required externally', function () {
+      const widgetLine = { target: 'Desc_Widget_C', supplies: [{ item: 'Desc_Widget_C', rate: 1 }], demands: [{ item: 'Desc_Ingot_C', rate: 5 }], raw: [], power: 6, machines: 6, byBuilding: { B_C: 6 } };
+      const roll = rollUpFactory(solverFixture, [widgetLine]);
+      assertEqual(roll.routes.length, 0);
+      assertEqual(roll.unmet.length, 1);
+      assertEqual(roll.unmet[0].item, 'Desc_Ingot_C');
+      assertClose(roll.unmet[0].rate, 5);
+    }],
+    ['roll-up routes a byproduct surplus to another line, leaving surplus an output', function () {
+      // Line 0 makes P and 2 B as surplus byproduct; line 1 makes Q needing 1 B.
+      const pLine = { target: 'Desc_P_C', supplies: [{ item: 'Desc_P_C', rate: 1 }, { item: 'Desc_B_C', rate: 2 }], demands: [], raw: [{ item: 'Desc_R_C', rate: 1 }], power: 2, machines: 2, byBuilding: { B_C: 2 } };
+      const qLine = { target: 'Desc_Q_C', supplies: [{ item: 'Desc_Q_C', rate: 1 }], demands: [{ item: 'Desc_B_C', rate: 1 }], raw: [], power: 1, machines: 1, byBuilding: { B_C: 1 } };
+      const roll = rollUpFactory(recycleProdFixture, [pLine, qLine]);
+
+      const route = roll.routes.find((r) => r.item === 'Desc_B_C');
+      assertEqual(route.from, 0); assertEqual(route.to, 1); assertClose(route.rate, 1);
+      const bOut = roll.outputs.find((o) => o.item === 'Desc_B_C');
+      assertClose(bOut.rate, 1);              // 2 produced − 1 consumed
+      assertEqual(bOut.product, false);       // B is a byproduct, not any line's target
+      assertEqual(roll.unmet.length, 0);
     }],
   ];
 
