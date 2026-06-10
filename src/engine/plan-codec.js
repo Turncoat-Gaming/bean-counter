@@ -28,15 +28,18 @@
   }
 
   // Encode a working plan -> string.
-  //   { version, entries:[{ recipeKey, targetRate, choiceKeys:[recipeKey…] }] }
+  //   { version, entries:[{ recipeKey, targetRate, choiceKeys:[recipeKey…],
+  //                          recycleItems:[itemKey…] }] }
   // choiceKeys are per-step recipe overrides (deep alternates); the item each
   // applies to is the recipe's primary product, so we store only the recipe key.
+  // recycleItems are item keys whose byproducts are credited back (recycling on).
   function encodePlan(plan) {
     const wire = {
       v: plan.version,
       e: plan.entries.map((x) => {
         const o = { r: x.recipeKey, t: x.targetRate };
         if (x.choiceKeys && x.choiceKeys.length) o.c = x.choiceKeys;
+        if (x.recycleItems && x.recycleItems.length) o.y = x.recycleItems;
         return o;
       }),
     };
@@ -44,7 +47,7 @@
   }
 
   // Decode a bookmark string -> working plan. Throws on a malformed/foreign tag.
-  // Old bookmarks without `c` decode to an empty choiceKeys list.
+  // Old bookmarks without `c`/`y` decode to empty choiceKeys / recycleItems.
   function decodePlan(str) {
     const s = String(str).trim();
     if (!s.startsWith(TAG)) throw new Error('not a bean-counter bookmark');
@@ -52,7 +55,9 @@
     const wire = JSON.parse(json);
     return {
       version: wire.v,
-      entries: (wire.e || []).map((x) => ({ recipeKey: x.r, targetRate: x.t, choiceKeys: x.c || [] })),
+      entries: (wire.e || []).map((x) => ({
+        recipeKey: x.r, targetRate: x.t, choiceKeys: x.c || [], recycleItems: x.y || [],
+      })),
     };
   }
 

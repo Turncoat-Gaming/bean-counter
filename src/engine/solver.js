@@ -3,19 +3,28 @@
 //
 // Given a target recipe + output rate, it works out the whole chain down to raw
 // resources: how much of every intermediate is needed, machines + power per step,
-// total raw-resource draw, and gross byproducts.
+// total raw-resource draw, and byproducts (gross, credited, and surplus).
 //
-// Approach: compute, per item, the per-unit demand of every descendant
-// (memoized), then multiply by the target rate. Memoization makes shared
-// intermediates (diamond dependencies like Iron Ingot feeding both plates and
-// screws) aggregate correctly without re-walking subtrees.
+// Approach: each producible item is made by one chosen recipe, so a "production
+// level" per item fully describes the plan. We solve those levels by fixed-point
+// iteration (Jacobi): each pass recomputes consumption + byproduct supply from
+// the current levels, then sets each level to its net demand. This aggregates
+// shared intermediates (diamond dependencies) correctly and — crucially — lets a
+// byproduct be *credited back* against demand for the same item elsewhere, which
+// a one-pass top-down walk cannot do (it couples the whole system: water from the
+// aluminium chain feeding its own dilution, HOR looping between plastic/rubber).
+//
+// Byproduct crediting is opt-in per item via `opts.recycle` (a set of item keys).
+// When an item is recycled, its byproduct supply offsets its demand (so fewer
+// machines / less raw draw); any leftover is reported as surplus. Without it the
+// old behaviour stands: full gross production, byproducts reported but uncredited.
 //
 // Known simplifications (documented, not bugs):
-//   - Byproducts are reported gross; they are NOT credited back against demand
-//     for the same item elsewhere (that needs a linear solve).
 //   - Each item is produced by a single chosen recipe (standard by default; an
 //     override map can pick alternates). Recipe cycles are detected, truncated,
 //     and surfaced as a warning rather than looping forever.
+//   - The production tree is a literal gross-flow view; the Totals reflect any
+//     crediting, so a recycled chain's tree shows more than its totals.
 (function (BC) {
   'use strict';
 
@@ -28,6 +37,7 @@
     // Per-item recipe choice: explicit override > raw-resource leaf > default.
     const choices = Object.assign({}, opts.recipeChoices || {});
     choices[targetItem] = targetRecipeKey;
+    const recycle = new Set(opts.recycle || []); // items whose byproducts are credited
     const warnings = [];
 
     function label(item) { return (dataset.items[item] && dataset.items[item].name) || item; }
@@ -38,29 +48,6 @@
     }
     function outputFor(recipe, item) {
       return recipe.outputs.find((o) => o.item === item) || recipe.outputs[0];
-    }
-
-    // unit(item): map of { descendantItem: rate per 1 unit/min of item }, incl. itself.
-    const unitMemo = new Map();
-    function unit(item, stack) {
-      if (unitMemo.has(item)) return unitMemo.get(item);
-      const m = Object.create(null);
-      m[item] = 1;
-      const rk = recipeFor(item);
-      if (rk && stack.has(item)) {
-        warnings.push('Recipe cycle involving ' + label(item) + '; chain truncated there.');
-      } else if (rk) {
-        const recipe = dataset.recipes[rk];
-        const out = outputFor(recipe, item);
-        const next = new Set(stack); next.add(item);
-        for (const inp of recipe.inputs) {
-          const perUnit = inp.amount / out.amount;
-          const child = unit(inp.item, next);
-          for (const k in child) m[k] = (m[k] || 0) + child[k] * perUnit;
-        }
-      }
-      unitMemo.set(item, m);
-      return m;
     }
 
     // depthToRaw(item): longest path to a raw leaf — used to order steps (target first).
@@ -110,51 +97,130 @@
     }
     const tree = buildTree(targetItem, targetRate, new Set());
 
-    const perUnit = unit(targetItem, new Set());
-    const demand = Object.create(null);
-    for (const k in perUnit) demand[k] = perUnit[k] * targetRate;
+    // Every item we actively produce (target + producible descendants).
+    const produced = new Set();
+    (function collect(item, stack) {
+      const rk = recipeFor(item);
+      if (!rk) return;                                 // raw / leaf — not produced
+      if (stack.has(item)) {
+        warnings.push('Recipe cycle involving ' + label(item) + '; chain truncated there.');
+        return;
+      }
+      if (produced.has(item)) return;                  // shared intermediate, already walked
+      produced.add(item);
+      const recipe = dataset.recipes[rk];
+      const next = new Set(stack); next.add(item);
+      for (const inp of recipe.inputs) collect(inp.item, next);
+    })(targetItem, new Set());
 
+    // Cache each producer's recipe + per-machine throughput.
+    const info = new Map();
+    for (const item of produced) {
+      const recipe = dataset.recipes[recipeFor(item)];
+      const out = outputFor(recipe, item);
+      info.set(item, { recipe, out, perMachine: out.amount * (60 / recipe.time), b: dataset.buildings[recipe.building] });
+    }
+
+    // Flows (consumption + byproduct supply) implied by the current production levels.
+    function flows(prod) {
+      const consume = Object.create(null), bsupply = Object.create(null);
+      for (const item of produced) {
+        const { recipe, out } = info.get(item);
+        const runs = prod[item] / out.amount;
+        for (const inp of recipe.inputs) consume[inp.item] = (consume[inp.item] || 0) + runs * inp.amount;
+        for (const o of recipe.outputs) {
+          if (o.item === item) continue;
+          bsupply[o.item] = (bsupply[o.item] || 0) + runs * o.amount;
+        }
+      }
+      return { consume, bsupply };
+    }
+
+    // Fixed-point (Jacobi) solve for production levels. Each pass: net demand =
+    // (external target + consumption) − credited byproduct, floored at zero.
+    // Converges in ~one pass per chain level; the cap is a safety net only.
+    const prod = Object.create(null);
+    for (const item of produced) prod[item] = 0;
+    let consume = Object.create(null), bsupply = Object.create(null);
+    for (let iter = 0; ; iter++) {
+      ({ consume, bsupply } = flows(prod));
+      let maxDiff = 0;
+      for (const item of produced) {
+        const demand = (item === targetItem ? targetRate : 0) + (consume[item] || 0);
+        const credit = recycle.has(item) ? Math.min(bsupply[item] || 0, demand) : 0;
+        const next = Math.max(0, demand - credit);
+        maxDiff = Math.max(maxDiff, Math.abs(next - prod[item]));
+        prod[item] = next;
+      }
+      if (maxDiff < 1e-9) break;
+      if (iter >= 1000) { warnings.push('Byproduct crediting did not fully converge; totals are approximate.'); break; }
+    }
+    ({ consume, bsupply } = flows(prod)); // final flows from the converged levels
+
+    const demandOf = (item) => (item === targetItem ? targetRate : 0) + (consume[item] || 0);
+
+    // Production steps.
     const steps = [];
-    const raw = [];
-    const byproducts = Object.create(null);
     const byBuilding = Object.create(null);
     let totalPower = 0, totalMachines = 0;
-
-    for (const item of Object.keys(demand)) {
-      const rate = demand[item];
-      const rk = recipeFor(item);
-      if (!rk) { raw.push({ item, rate }); continue; }
-      const recipe = dataset.recipes[rk];
-      const out = outputFor(recipe, item);
-      const perMachine = out.amount * (60 / recipe.time);
+    for (const item of produced) {
+      const { perMachine, b, recipe } = info.get(item);
+      const rate = prod[item];
       const machines = perMachine > 0 ? rate / perMachine : 0;
-      const b = dataset.buildings[recipe.building];
+      const recyclable = (bsupply[item] || 0) > 1e-9;     // a byproduct source for this item exists
+      if (machines <= 1e-9 && !recyclable) continue;       // nothing to build, nothing to toggle
       const power = machines * (b ? b.power : 0);
       totalPower += power;
       totalMachines += machines;
       byBuilding[recipe.building] = (byBuilding[recipe.building] || 0) + machines;
       steps.push({
-        item, recipeKey: rk, recipeName: recipe.name, alternate: !!recipe.alternate,
+        item, recipeKey: recipeFor(item), recipeName: recipe.name, alternate: !!recipe.alternate,
         rate, machines, building: recipe.building, buildingName: b ? b.name : recipe.building,
         power, depth: depthToRaw(item, new Set()),
+        recyclable, recycling: recycle.has(item),
       });
-      for (const o of recipe.outputs) {
-        if (o.item === item) continue;
-        byproducts[o.item] = (byproducts[o.item] || 0) + o.amount * (60 / recipe.time) * machines;
-      }
+    }
+
+    // Raw-resource draw (consumed leaves), net of any credited byproduct.
+    const raw = [];
+    for (const item of Object.keys(consume)) {
+      if (produced.has(item)) continue;
+      const supply = bsupply[item] || 0;
+      const credit = recycle.has(item) ? Math.min(supply, consume[item]) : 0;
+      const draw = Math.max(0, consume[item] - credit);
+      const recyclable = supply > 1e-9;
+      if (draw <= 1e-9 && !recyclable) continue;
+      raw.push({ item, rate: draw, recyclable, recycling: recycle.has(item) });
+    }
+
+    // Byproducts: gross output, how much was credited back, and the leftover surplus.
+    const byproducts = [];
+    for (const item of Object.keys(bsupply)) {
+      const gross = bsupply[item];
+      if (gross <= 1e-9) continue;
+      const demand = demandOf(item);
+      const credited = recycle.has(item) ? Math.min(gross, demand) : 0;
+      const it = dataset.items[item];
+      byproducts.push({
+        item, gross, credited, surplus: gross - credited,
+        form: it ? it.form : 'solid',
+        fluid: it ? (it.form === 'liquid' || it.form === 'gas') : false,
+        recyclable: demand > 1e-9,        // could be reused (it's consumed somewhere)
+        recycling: recycle.has(item),
+      });
     }
 
     const byName = (a, b) => label(a.item).localeCompare(label(b.item));
     steps.sort((a, b) => b.depth - a.depth || a.recipeName.localeCompare(b.recipeName)); // target first
     raw.sort(byName);
-    const byproductList = Object.keys(byproducts).map((item) => ({ item, rate: byproducts[item] })).sort(byName);
+    byproducts.sort(byName);
 
     return {
       targetItem, targetRecipeKey, targetRate,
       tree,
-      steps, raw, byproducts: byproductList,
+      steps, raw, byproducts,
       totals: { power: totalPower, machines: totalMachines, byBuilding },
-      warnings,
+      warnings: [...new Set(warnings)],
     };
   }
 

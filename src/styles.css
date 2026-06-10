@@ -180,6 +180,17 @@ button:hover { filter: brightness(1.05); }
 .cols h3 { margin: 0 0 0.4rem; font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
 .cols ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 0.25rem; }
 .cols li span { color: var(--accent); font-variant-numeric: tabular-nums; }
+.cols li span.muted { color: var(--muted); }
+
+/* recycle ♻ toggle on a production / raw-draw row */
+.recycle { cursor: pointer; user-select: none; font-size: 0.85rem; color: var(--muted); white-space: nowrap; }
+.recycle input { vertical-align: -1px; margin: 0 0.15rem 0 0; accent-color: var(--accent); cursor: pointer; }
+.steps .item .recycle { margin-left: 0.4rem; }
+
+/* leftover byproduct you must sink or loop; fluids/gases can't go to the sink */
+.byproducts span.surplus { color: var(--accent); }
+.byproducts span.surplus.fluid { color: var(--error); }
+.byproducts .hint { display: block; color: var(--muted); font-size: 0.78rem; }
 
 .bookmark .row { display: flex; gap: 0.5rem; }
 .bookmark input { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.8rem; }

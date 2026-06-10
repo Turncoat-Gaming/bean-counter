@@ -27,9 +27,14 @@ nginx box, a NAS share) by serving the files as-is.
 - **Full-chain solver** — pick a target item + rate and get the whole production
   chain down to raw resources. You get an **indented production tree** (so you can
   see where each branch's demand goes — e.g. screws for the plate vs. screws for
-  the frame), plus an **aggregated totals table**, raw-resource draw, gross
+  the frame), plus an **aggregated totals table**, raw-resource draw,
   byproducts, and a per-building roll-up. Tree nodes are collapsible. (Toggle to
   **Single step** for just the one recipe.)
+- **Byproduct crediting** — any step whose item also comes out of another recipe
+  as a byproduct gets a **♻ reuse** toggle. Tick it and that byproduct is credited
+  against demand, cutting machines and raw draw; leftover **surplus** is called out
+  (fluids/gases flagged hard, since they can't go to the AWESOME Sink and need a
+  loop or conversion). Toggles travel in the bookmark.
 - **Per-step alternate selection** — any node in the tree that has alternate
   recipes shows an inline picker, so you can swap a recipe deep in the chain and
   watch the whole plan re-solve. Choice is per item (it applies wherever that item
@@ -40,7 +45,7 @@ nginx box, a NAS share) by serving the files as-is.
   URL. Copy the link (or the string) to save or share a plan; paste it to
   restore. Fully client-side, reversible, no server.
 
-Planned next: byproduct crediting, overclock/clock-speed, and multi-line plans.
+Planned next: overclock/clock-speed and multi-line plans.
 
 ## Project layout
 

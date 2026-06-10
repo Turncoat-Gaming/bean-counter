@@ -51,8 +51,10 @@
     let active = null;        // target recipe (may be an alternate)
     let mode = 'chain';
     let choices = {};         // per-step override: item -> recipeKey (deep alternates)
+    let recycle = new Set();  // items whose byproducts are credited back (recycling on)
     let targetItem = null;    // product of `active`, set during chain render
     let bookmarkChoiceKeys = []; // choices actually used by the current chain
+    let bookmarkRecycle = [];    // recycle toggles in play in the current chain
     let collapsedPaths = new Set(); // tree nodes the user has collapsed (by path)
 
     for (const [key, recipe] of data.pickerRecipes(dataset)) {
@@ -117,6 +119,15 @@
       return tag + esc(variantLabel(step.recipeName));
     }
 
+    // A "♻ reuse" checkbox for an item that has a byproduct source to pull from
+    // (rendered on its production / raw-draw row). Empty for non-recyclable rows.
+    function recycleToggle(x) {
+      if (!x.recyclable) return '';
+      return '<label class="recycle" title="Reuse this item\'s byproduct supply">' +
+        '<input type="checkbox" class="recycle-toggle" data-item="' + esc(x.item) + '"' +
+        (x.recycling ? ' checked' : '') + '> ♻</label>';
+    }
+
     // One node of the production tree (nested <ul> gives the indentation).
     // `path` is the unique route from the root, so collapse state survives
     // re-renders and applies to the right occurrence of a shared item.
@@ -146,7 +157,7 @@
     }
 
     function renderChain(targetRate) {
-      const sol = solveChain(dataset, active, targetRate, { recipeChoices: choices });
+      const sol = solveChain(dataset, active, targetRate, { recipeChoices: choices, recycle: [...recycle] });
       targetItem = sol.targetItem;
 
       // Which overrides are actually in play (for a tidy bookmark).
@@ -154,6 +165,12 @@
       bookmarkChoiceKeys = Object.keys(choices)
         .filter((it) => stepItems.has(it) && it !== targetItem)
         .map((it) => choices[it]);
+
+      // Recycle toggles relevant to this chain (an item with a byproduct source).
+      const recyclableNow = new Set();
+      sol.steps.forEach((s) => { if (s.recyclable) recyclableNow.add(s.item); });
+      sol.raw.forEach((r) => { if (r.recyclable) recyclableNow.add(r.item); });
+      bookmarkRecycle = [...recycle].filter((it) => recyclableNow.has(it));
 
       const buildings = Object.keys(sol.totals.byBuilding)
         .map((k) => [k, sol.totals.byBuilding[k]])
@@ -167,7 +184,7 @@
         '<tr>' +
         '<td class="mach">' + fmt(s.machines) + '×</td>' +
         '<td class="bld">' + esc(s.buildingName) + '</td>' +
-        '<td class="item">' + esc(itemName(s.item)) + '</td>' +
+        '<td class="item">' + esc(itemName(s.item)) + ' ' + recycleToggle(s) + '</td>' +
         '<td class="rate">' + fmt(s.rate) + '/min</td>' +
         '<td class="rec">' + recipeName(s) + '</td>' +
         '</tr>'
@@ -178,17 +195,38 @@
         '<th class="mach">Qty</th><th>Building</th><th>Item</th><th class="rate">Rate</th><th>Recipe</th>' +
         '</tr></thead><tbody>' + rows + '</tbody></table></div>';
 
+      const rawList = sol.raw.map((r) =>
+        '<li><span>' + fmt(r.rate) + '/min</span> ' + esc(itemName(r.item)) + ' ' + recycleToggle(r) + '</li>'
+      ).join('') || '<li class="muted">none</li>';
+
+      // Byproducts: surplus is what you must sink/loop; show reused amount too.
+      // Fluids/gases can't go to the AWESOME Sink, so their surplus is flagged hard.
+      const byproductList = sol.byproducts.map((b) => {
+        const reused = b.credited > 0 ? ' <span class="muted">(' + fmt(b.credited) + '/min reused)</span>' : '';
+        if (b.surplus <= 0) {
+          return '<li><span>0/min</span> surplus ' + esc(itemName(b.item)) + reused + '</li>';
+        }
+        const cls = 'surplus' + (b.fluid ? ' fluid' : '');
+        const hint = b.fluid
+          ? '<span class="hint">fluid surplus — needs a recycle loop or conversion to a sinkable product</span>'
+          : (b.recyclable && !b.recycling ? '<span class="hint">tick ♻ on its step to reuse it</span>' : '');
+        return '<li><span class="' + cls + '">' + fmt(b.surplus) + '/min</span> surplus ' +
+          esc(itemName(b.item)) + reused + (hint ? ' ' + hint : '') + '</li>';
+      }).join('') || '<li class="muted">none</li>';
+
       resultEl.innerHTML =
         '<div class="headline"><strong>' + fmt(sol.totals.machines) + '</strong> machines' +
         '<span class="power">' + fmt(sol.totals.power) + ' MW</span></div>' +
         '<div class="buildings muted">' + buildings + '</div>' +
         '<h3>Production tree</h3>' +
-        '<p class="muted tree-note">Pick a recipe on any node — it applies to that item across the whole plan.</p>' +
+        '<p class="muted tree-note">Pick a recipe on any node — it applies to that item across the whole plan. The tree shows gross flow; Totals below reflect any recycling.</p>' +
         tree +
-        '<h3>Totals</h3>' + totalsTable +
+        '<h3>Totals</h3>' +
+        '<p class="muted tree-note">Tick ♻ on a step to reuse a byproduct of that item — it credits against demand, cutting machines and raw draw.</p>' +
+        totalsTable +
         '<div class="cols">' +
-        '<div><h3>Raw resources</h3><ul>' + (flowList(sol.raw, (r) => r.rate, (r) => r.item) || '<li class="muted">none</li>') + '</ul></div>' +
-        '<div><h3>Byproducts</h3><ul>' + (flowList(sol.byproducts, (b) => b.rate, (b) => b.item) || '<li class="muted">none</li>') + '</ul></div>' +
+        '<div><h3>Raw resources</h3><ul>' + rawList + '</ul></div>' +
+        '<div><h3>Byproducts</h3><ul class="byproducts">' + byproductList + '</ul></div>' +
         '</div>' +
         (sol.warnings.length ? '<p class="error">' + sol.warnings.map(esc).join('<br>') + '</p>' : '');
     }
@@ -198,7 +236,8 @@
       if (mode === 'chain') renderChain(targetRate); else renderSingle(targetRate);
 
       const choiceKeys = mode === 'chain' ? bookmarkChoiceKeys : [];
-      const bookmark = encodePlan({ version: dataset.gameVersion, entries: [{ recipeKey: active, targetRate, choiceKeys }] });
+      const recycleItems = mode === 'chain' ? bookmarkRecycle : [];
+      const bookmark = encodePlan({ version: dataset.gameVersion, entries: [{ recipeKey: active, targetRate, choiceKeys, recycleItems }] });
       bookmarkEl.value = bookmark;
       history.replaceState(null, '', '#' + bookmark);
     }
@@ -232,7 +271,8 @@
         if (first && dataset.recipes[first.recipeKey]) {
           rateInput.value = first.targetRate;
           applyChoiceKeys(first.choiceKeys);
-          if (first.choiceKeys && first.choiceKeys.length) setMode('chain');
+          recycle = new Set(first.recycleItems || []);
+          if ((first.choiceKeys && first.choiceKeys.length) || recycle.size) setMode('chain');
           setActive(first.recipeKey);
           return true;
         }
@@ -246,8 +286,14 @@
       const chip = e.target.closest('.chip');
       if (chip) setActive(chip.dataset.key);
     });
-    // Per-step recipe selection (deep alternates).
+    // Per-step recipe selection (deep alternates) and recycle toggles.
     resultEl.addEventListener('change', (e) => {
+      const rec = e.target.closest('.recycle-toggle');
+      if (rec) {
+        if (rec.checked) recycle.add(rec.dataset.item); else recycle.delete(rec.dataset.item);
+        render();
+        return;
+      }
       const sel = e.target.closest('.step-recipe');
       if (!sel) return;
       const item = sel.dataset.item, key = sel.value;

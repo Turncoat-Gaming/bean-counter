@@ -36,11 +36,22 @@ the recipe's product). Choice is **per item** (one recipe per item globally) so
 totals stay coherent. The chain view shows an **indented production tree** (solver
 returns a literal `tree`; nested `<ul>` for indentation; shared intermediates
 duplicated with per-branch sub-rates) with the per-node selectors, plus a
-read-only aggregated **Totals** table below. Known simplification still open:
-byproducts are gross (not credited back).
+read-only aggregated **Totals** table below.
 
-Roadmap (evolve simply): byproduct crediting, overclock, multi-line plans,
-version selector growth.
+**Byproduct crediting** (shipped 2026-06-10): the aggregate solve was rewritten
+from the old memoized per-unit walk to a **fixed-point (Jacobi) iteration over
+per-item production levels** (`net demand = target+consumption − credited
+byproduct`, floored at 0; cap 1000 iters with a non-convergence warning), because
+crediting couples the whole system (water loops, HOR↔plastic/rubber) and isn't
+tree-decomposable. Crediting is **opt-in per item** via `opts.recycle` (Set of
+item keys); the tree stays a gross-flow view while Totals reflect credits. Solver
+output: `steps`/`raw` rows carry `recyclable` (a byproduct source exists) +
+`recycling`; `byproducts` entries are now `{item, gross, credited, surplus, form,
+fluid, recyclable, recycling}`. UI puts a **♻ reuse** checkbox on each recyclable
+step/raw row (not byproduct rows — avoids dup); surplus is highlighted, fluids
+(form≠solid) flagged hard. Persisted in the bookmark as `y:[itemKeys]` (codec).
+
+Roadmap (evolve simply): overclock, multi-line plans, version selector growth.
 
 Constraints live in [[feedback-no-npm-supply-chain]]; workflow in
 [[project-workflow-main-only]].
