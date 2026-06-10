@@ -53,7 +53,18 @@ like the per-node recipe selector; per-item so duplicated occurrences share stat
 the Byproducts panel highlights surplus, fluids (form≠solid) flagged hard.
 Persisted in the bookmark as `y:[itemKeys]` (codec).
 
-Roadmap (evolve simply): overclock, multi-line plans, version selector growth.
+**Boundary cut + multi-line plans** (shipped 2026-06-10): a 📦 toggle on tree
+nodes marks an item as sourced externally (`opts.provided`) — the chain stops
+there and it surfaces in `lineInputs` (credited like raw). A doc now holds many
+**lines** (one factory) in a stacked accordion; new pure
+`BC.solver.rollUpFactory(dataset, summaries)` nets them by item key into
+line→line **routes**, net `outputs`, and `unmet` inputs, plus summed
+raw/power/machines. Routing is automatic by item (no explicit edges yet). Codec
+needed no change — the `entries[]` array already existed. Full detail +
+next increments in [[project-lines-factories-direction]].
+
+Roadmap (evolve simply): explicit per-edge routing, multiple factories (tabs),
+overclock/clock-speed, version selector growth.
 
 Constraints live in [[feedback-no-npm-supply-chain]]; workflow in
 [[project-workflow-main-only]].
