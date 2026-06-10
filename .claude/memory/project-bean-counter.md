@@ -48,8 +48,10 @@ item keys); the tree stays a gross-flow view while Totals reflect credits. Solve
 output: `steps`/`raw` rows carry `recyclable` (a byproduct source exists) +
 `recycling`; `byproducts` entries are now `{item, gross, credited, surplus, form,
 fluid, recyclable, recycling}`. UI puts a **♻ reuse** checkbox on each recyclable
-step/raw row (not byproduct rows — avoids dup); surplus is highlighted, fluids
-(form≠solid) flagged hard. Persisted in the bookmark as `y:[itemKeys]` (codec).
+**production-tree node** (solver annotates `tree` nodes with recyclable/recycling,
+like the per-node recipe selector; per-item so duplicated occurrences share state);
+the Byproducts panel highlights surplus, fluids (form≠solid) flagged hard.
+Persisted in the bookmark as `y:[itemKeys]` (codec).
 
 Roadmap (evolve simply): overclock, multi-line plans, version selector growth.
 

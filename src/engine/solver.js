@@ -159,6 +159,14 @@
 
     const demandOf = (item) => (item === targetItem ? targetRate : 0) + (consume[item] || 0);
 
+    // Tag tree nodes with recycle state — the ♻ reuse toggle lives on tree nodes
+    // (recyclable = a byproduct source for this item exists in the chain).
+    (function annotate(node) {
+      node.recyclable = (bsupply[node.item] || 0) > 1e-9;
+      node.recycling = recycle.has(node.item);
+      (node.children || []).forEach(annotate);
+    })(tree);
+
     // Production steps.
     const steps = [];
     const byBuilding = Object.create(null);

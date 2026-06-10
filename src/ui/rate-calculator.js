@@ -120,7 +120,7 @@
     }
 
     // A "♻ reuse" checkbox for an item that has a byproduct source to pull from
-    // (rendered on its production / raw-draw row). Empty for non-recyclable rows.
+    // (rendered on its tree node). Empty for non-recyclable nodes.
     function recycleToggle(x) {
       if (!x.recyclable) return '';
       return '<label class="recycle" title="Reuse this item\'s byproduct supply">' +
@@ -140,13 +140,14 @@
       const body = node.raw
         ? toggle + '<span class="raw-tag">raw</span> ' +
           '<span class="item">' + esc(itemName(node.item)) + '</span> ' +
-          '<span class="rate">' + fmt(node.rate) + '/min</span>'
+          '<span class="rate">' + fmt(node.rate) + '/min</span> ' +
+          recycleToggle(node)
         : toggle +
           '<span class="mach">' + fmt(node.machines) + '×</span> ' +
           '<span class="bld">' + esc(node.buildingName) + '</span> ' +
           '<span class="item">' + esc(itemName(node.item)) + '</span> ' +
           '<span class="rate">' + fmt(node.rate) + '/min</span> ' +
-          recipeCell(node);
+          recipeCell(node) + recycleToggle(node);
 
       const collapsed = hasKids && collapsedPaths.has(path);
       let html = '<li class="' + (collapsed ? 'collapsed' : '') + '"><div class="node">' + body + '</div>';
@@ -184,7 +185,7 @@
         '<tr>' +
         '<td class="mach">' + fmt(s.machines) + '×</td>' +
         '<td class="bld">' + esc(s.buildingName) + '</td>' +
-        '<td class="item">' + esc(itemName(s.item)) + ' ' + recycleToggle(s) + '</td>' +
+        '<td class="item">' + esc(itemName(s.item)) + '</td>' +
         '<td class="rate">' + fmt(s.rate) + '/min</td>' +
         '<td class="rec">' + recipeName(s) + '</td>' +
         '</tr>'
@@ -196,7 +197,7 @@
         '</tr></thead><tbody>' + rows + '</tbody></table></div>';
 
       const rawList = sol.raw.map((r) =>
-        '<li><span>' + fmt(r.rate) + '/min</span> ' + esc(itemName(r.item)) + ' ' + recycleToggle(r) + '</li>'
+        '<li><span>' + fmt(r.rate) + '/min</span> ' + esc(itemName(r.item)) + '</li>'
       ).join('') || '<li class="muted">none</li>';
 
       // Byproducts: surplus is what you must sink/loop; show reused amount too.
@@ -209,7 +210,7 @@
         const cls = 'surplus' + (b.fluid ? ' fluid' : '');
         const hint = b.fluid
           ? '<span class="hint">fluid surplus — needs a recycle loop or conversion to a sinkable product</span>'
-          : (b.recyclable && !b.recycling ? '<span class="hint">tick ♻ on its step to reuse it</span>' : '');
+          : (b.recyclable && !b.recycling ? '<span class="hint">tick ♻ on its node in the tree to reuse it</span>' : '');
         return '<li><span class="' + cls + '">' + fmt(b.surplus) + '/min</span> surplus ' +
           esc(itemName(b.item)) + reused + (hint ? ' ' + hint : '') + '</li>';
       }).join('') || '<li class="muted">none</li>';
@@ -219,10 +220,9 @@
         '<span class="power">' + fmt(sol.totals.power) + ' MW</span></div>' +
         '<div class="buildings muted">' + buildings + '</div>' +
         '<h3>Production tree</h3>' +
-        '<p class="muted tree-note">Pick a recipe on any node — it applies to that item across the whole plan. The tree shows gross flow; Totals below reflect any recycling.</p>' +
+        '<p class="muted tree-note">Pick a recipe on any node — it applies to that item across the whole plan. Tick ♻ to reuse that item\'s byproduct (credits against demand, cutting machines and raw draw). The tree shows gross flow; Totals below reflect any recycling.</p>' +
         tree +
         '<h3>Totals</h3>' +
-        '<p class="muted tree-note">Tick ♻ on a step to reuse a byproduct of that item — it credits against demand, cutting machines and raw draw.</p>' +
         totalsTable +
         '<div class="cols">' +
         '<div><h3>Raw resources</h3><ul>' + rawList + '</ul></div>' +

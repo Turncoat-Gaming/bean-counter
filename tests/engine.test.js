@@ -197,6 +197,18 @@
       const b = sol.byproducts.find((x) => x.item === 'Desc_B_C');
       assertClose(b.credited, 1); assertClose(b.surplus, 1);
     }],
+    ['tree nodes carry recycle flags (toggle lives on the tree)', function () {
+      const sol = solveChain(recycleProdFixture, 'Recipe_P_C', 1, { recycle: ['Desc_B_C'] });
+      let bNode = null, pNode = null;
+      (function walk(n) {
+        if (n.item === 'Desc_B_C' && !bNode) bNode = n;
+        if (n.item === 'Desc_P_C') pNode = n;
+        (n.children || []).forEach(walk);
+      })(sol.tree);
+      assertEqual(bNode.recyclable, true);   // B has a byproduct source
+      assertEqual(bNode.recycling, true);    // and it's toggled on
+      assertEqual(pNode.recyclable, false);  // P (target) is nobody's byproduct
+    }],
 
     // --- bookmark carries deep choices ---
     ['bookmark round-trips with choiceKeys', function () {

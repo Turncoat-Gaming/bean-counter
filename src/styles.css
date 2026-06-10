@@ -182,10 +182,11 @@ button:hover { filter: brightness(1.05); }
 .cols li span { color: var(--accent); font-variant-numeric: tabular-nums; }
 .cols li span.muted { color: var(--muted); }
 
-/* recycle ♻ toggle on a production / raw-draw row */
+/* recycle ♻ toggle on a production-tree node */
 .recycle { cursor: pointer; user-select: none; font-size: 0.85rem; color: var(--muted); white-space: nowrap; }
 .recycle input { vertical-align: -1px; margin: 0 0.15rem 0 0; accent-color: var(--accent); cursor: pointer; }
-.steps .item .recycle { margin-left: 0.4rem; }
+.node .recycle { margin-left: 0.4rem; }
+.node .recycle:has(:checked) { color: var(--accent); }
 
 /* leftover byproduct you must sink or loop; fluids/gases can't go to the sink */
 .byproducts span.surplus { color: var(--accent); }

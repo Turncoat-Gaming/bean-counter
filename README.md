@@ -30,9 +30,10 @@ nginx box, a NAS share) by serving the files as-is.
   the frame), plus an **aggregated totals table**, raw-resource draw,
   byproducts, and a per-building roll-up. Tree nodes are collapsible. (Toggle to
   **Single step** for just the one recipe.)
-- **Byproduct crediting** — any step whose item also comes out of another recipe
-  as a byproduct gets a **♻ reuse** toggle. Tick it and that byproduct is credited
-  against demand, cutting machines and raw draw; leftover **surplus** is called out
+- **Byproduct crediting** — any node in the production tree whose item also comes
+  out of another recipe as a byproduct gets a **♻ reuse** toggle. Tick it and that
+  byproduct is credited against demand, cutting machines and raw draw; leftover
+  **surplus** is called out
   (fluids/gases flagged hard, since they can't go to the AWESOME Sink and need a
   loop or conversion). Toggles travel in the bookmark.
 - **Per-step alternate selection** — any node in the tree that has alternate
