@@ -78,11 +78,18 @@
       assertClose(p.inputs[0].rate, 30);
       assertClose(p.power, 30);
     }],
+    ['plan can target a byproduct slot; the primary product becomes a byproduct', function () {
+      const p = computeRecipePlan(dataset, 'Recipe_Plastic_C', 10, 'Desc_HeavyOilResidue_C');
+      assertClose(p.machines, 1);                       // 10/min HOR = 1 machine
+      assertEqual(p.byproducts.length, 1);
+      assertEqual(p.byproducts[0].item, 'Desc_Plastic_C');
+      assertClose(p.byproducts[0].rate, 20);            // host product is now the extra
+    }],
     ['bookmark round-trips', function () {
-      const plan = { version: '1.2', entries: [{ recipeKey: 'Recipe_IngotIron_C', targetRate: 90 }] };
+      const plan = { version: '1.2', entries: [{ targetItem: 'Desc_IronIngot_C', targetRate: 90 }] };
       const back = decodePlan(encodePlan(plan));
       assertEqual(back.version, '1.2');
-      assertEqual(back.entries[0].recipeKey, 'Recipe_IngotIron_C');
+      assertEqual(back.entries[0].targetItem, 'Desc_IronIngot_C');
       assertClose(back.entries[0].targetRate, 90);
     }],
     ['decode rejects a foreign string', function () {
@@ -118,9 +125,44 @@
       assertEqual(data.representativeKey(altFixture, 'Recipe_Alternate_PolymerResin_C'), 'Recipe_Alternate_PolymerResin_C');
     }],
 
+    // --- manufacturable-item picker (items, not recipes) ---
+    ['manufacturableItems lists products + byproducts, drops raw and input-only items', function () {
+      const items = data.manufacturableItems(solverFixture);
+      assertEqual(items.includes('Desc_Widget_C'), true);   // a product
+      assertEqual(items.includes('Desc_Slag_C'), true);     // a byproduct is targetable
+      assertEqual(items.includes('Desc_Ore_C'), false);     // raw resource, despite a conversion recipe
+      // sorted by display name
+      assertEqual(items.slice().sort((a, b) => data.itemName(solverFixture, a).localeCompare(data.itemName(solverFixture, b))).join(), items.join());
+    }],
+    ['recipesOutputting includes byproduct sources; defaultRecipeForItem covers byproduct-only items', function () {
+      assertEqual(data.recipesForItem(solverFixture, 'Desc_Slag_C').length, 0);          // no primary recipe
+      assertEqual(data.recipesOutputting(solverFixture, 'Desc_Slag_C')[0], 'Recipe_Ingot_C'); // but a byproduct source
+      assertEqual(data.defaultRecipeForItem(solverFixture, 'Desc_Slag_C'), 'Recipe_Ingot_C');
+      assertEqual(data.recipesOutputting(solverFixture, 'Desc_Ingot_C').includes('Recipe_Alternate_PureIngot_C'), true);
+    }],
+    ['defaultRecipeForItem skips a recipe that loops back (packaging) for a sane default', function () {
+      const fx = {
+        gameVersion: 'test',
+        items: {
+          Desc_F_C: { name: 'F', form: 'liquid' }, Desc_PackagedF_C: { name: 'Packaged F', form: 'solid' },
+          Desc_Can_C: { name: 'Can', form: 'solid' }, Desc_Raw_C: { name: 'Raw', form: 'solid', resource: true },
+        },
+        buildings: { B_C: { name: 'B', power: 1 } },
+        recipes: {
+          // 'Unpackage F' is a standard recipe → primary-product default, but it loops
+          // (its input Packaged F is made from F again).
+          Recipe_UnpackageF_C: { name: 'Unpackage F', time: 1, building: 'B_C', alternate: false, inputs: [{ item: 'Desc_PackagedF_C', amount: 1 }], outputs: [{ item: 'Desc_F_C', amount: 1 }, { item: 'Desc_Can_C', amount: 1 }] },
+          Recipe_PackageF_C: { name: 'Package F', time: 1, building: 'B_C', alternate: false, inputs: [{ item: 'Desc_F_C', amount: 1 }, { item: 'Desc_Can_C', amount: 1 }], outputs: [{ item: 'Desc_PackagedF_C', amount: 1 }] },
+          Recipe_Alternate_RealF_C: { name: 'Alternate: Real F', time: 1, building: 'B_C', alternate: true, inputs: [{ item: 'Desc_Raw_C', amount: 1 }], outputs: [{ item: 'Desc_F_C', amount: 1 }] },
+        },
+      };
+      assertEqual(data.defaultRecipeKey(fx, 'Desc_F_C'), 'Recipe_UnpackageF_C');       // naive primary default loops
+      assertEqual(data.defaultRecipeForItem(fx, 'Desc_F_C'), 'Recipe_Alternate_RealF_C'); // target default skips the loop
+    }],
+
     // --- full-chain solver ---
     ['solver aggregates a shared intermediate (diamond)', function () {
-      const sol = solveChain(solverFixture, 'Recipe_Widget_C', 1);
+      const sol = solveChain(solverFixture, 'Desc_Widget_C', 1);
       const ingot = sol.steps.find((s) => s.item === 'Desc_Ingot_C');
       assertClose(ingot.rate, 5);        // 2 (plate) + 3 (rod)
       assertClose(ingot.machines, 5);
@@ -128,14 +170,14 @@
       assertEqual(sol.steps[0].item, 'Desc_Widget_C'); // target listed first
     }],
     ['solver treats raw resources as leaves despite a conversion recipe', function () {
-      const sol = solveChain(solverFixture, 'Recipe_Widget_C', 1);
+      const sol = solveChain(solverFixture, 'Desc_Widget_C', 1);
       assertEqual(sol.raw.length, 1);
       assertEqual(sol.raw[0].item, 'Desc_Ore_C');
       assertClose(sol.raw[0].rate, 5);
       assertEqual(sol.steps.some((s) => s.item === 'Desc_Ore_C'), false); // never "produced"
     }],
     ['solver reports gross byproducts', function () {
-      const sol = solveChain(solverFixture, 'Recipe_Widget_C', 1);
+      const sol = solveChain(solverFixture, 'Desc_Widget_C', 1);
       const slag = sol.byproducts.find((b) => b.item === 'Desc_Slag_C');
       assertClose(slag.gross, 5); // 1/craft × 5 ingot machines
       assertClose(slag.surplus, 5); // nothing consumes Slag, so it's all surplus
@@ -143,7 +185,7 @@
       assertEqual(slag.recyclable, false); // not consumed anywhere → can't be reused
     }],
     ['solver tree duplicates shared nodes with per-branch sub-rates', function () {
-      const t = solveChain(solverFixture, 'Recipe_Widget_C', 1).tree;
+      const t = solveChain(solverFixture, 'Desc_Widget_C', 1).tree;
       assertEqual(t.item, 'Desc_Widget_C');
       assertClose(t.rate, 1);
       assertEqual(t.children.length, 2); // Plate + Rod branches
@@ -157,11 +199,11 @@
       assertEqual(oreRaw, 2);  // raw Ore is a leaf in both
     }],
     ['per-step recipe override changes the chain', function () {
-      const base = solveChain(solverFixture, 'Recipe_Widget_C', 1);
+      const base = solveChain(solverFixture, 'Desc_Widget_C', 1);
       assertEqual(base.raw.some((r) => r.item === 'Desc_Ore_C'), true);     // default: Ore + Slag
       assertEqual(base.byproducts.some((b) => b.item === 'Desc_Slag_C'), true);
 
-      const sol = solveChain(solverFixture, 'Recipe_Widget_C', 1, {
+      const sol = solveChain(solverFixture, 'Desc_Widget_C', 1, {
         recipeChoices: { Desc_Ingot_C: 'Recipe_Alternate_PureIngot_C' },
       });
       const altOre = sol.raw.find((r) => r.item === 'Desc_AltOre_C');
@@ -169,27 +211,47 @@
       assertEqual(sol.raw.some((r) => r.item === 'Desc_Ore_C'), false);     // no longer mined
       assertEqual(sol.byproducts.some((b) => b.item === 'Desc_Slag_C'), false); // no byproduct now
     }],
+    ['targeting a byproduct scales its host recipe; the host product becomes surplus', function () {
+      // Slag is only ever a byproduct of the Ingot recipe (1 Slag + 1 Ingot/craft).
+      const sol = solveChain(solverFixture, 'Desc_Slag_C', 5);
+      assertEqual(sol.targetItem, 'Desc_Slag_C');
+      assertEqual(sol.targetRecipeKey, 'Recipe_Ingot_C');
+      assertClose(sol.targetRate, 5);
+      assertClose(sol.totals.machines, 5);                                   // 5 Ingot machines make 5 Slag
+      const ingot = sol.byproducts.find((b) => b.item === 'Desc_Ingot_C');
+      assertClose(ingot.surplus, 5);                                         // host's primary product is surplus
+      assertClose(sol.raw.find((r) => r.item === 'Desc_Ore_C').rate, 5);
+      assertEqual(sol.tree.isTarget, true);                                  // root node flagged for the broad picker
+    }],
+    ['the root recipe can be overridden via recipeChoices on the target item', function () {
+      const sol = solveChain(solverFixture, 'Desc_Ingot_C', 1, {
+        recipeChoices: { Desc_Ingot_C: 'Recipe_Alternate_PureIngot_C' },
+      });
+      assertEqual(sol.targetRecipeKey, 'Recipe_Alternate_PureIngot_C');
+      assertClose(sol.raw.find((r) => r.item === 'Desc_AltOre_C').rate, 2);  // 1 ingot × 2 Alt Ore
+      assertEqual(sol.byproducts.some((b) => b.item === 'Desc_Slag_C'), false); // pure recipe, no Slag
+    }],
 
     // --- byproduct crediting ---
     ['recycling a byproduct fluid offsets raw draw, leaving surplus', function () {
-      const gross = solveChain(recycleRawFixture, 'Recipe_A_C', 1);
+      const gross = solveChain(recycleRawFixture, 'Desc_A_C', 1);
       const w0 = gross.byproducts.find((b) => b.item === 'Desc_W_C');
       assertClose(w0.gross, 3); assertClose(w0.surplus, 3); assertClose(w0.credited, 0);
       assertEqual(w0.fluid, true);
       assertClose(gross.raw.find((r) => r.item === 'Desc_W_C').rate, 2); // 2/min drawn
 
-      const sol = solveChain(recycleRawFixture, 'Recipe_A_C', 1, { recycle: ['Desc_W_C'] });
+      const sol = solveChain(recycleRawFixture, 'Desc_A_C', 1, { recycle: ['Desc_W_C'] });
       const w = sol.byproducts.find((b) => b.item === 'Desc_W_C');
       assertClose(w.gross, 3); assertClose(w.credited, 2); assertClose(w.surplus, 1);
       assertClose(sol.raw.find((r) => r.item === 'Desc_W_C').rate, 0); // fully covered by byproduct
     }],
     ['recycling a produced byproduct zeroes its own step', function () {
-      const gross = solveChain(recycleProdFixture, 'Recipe_P_C', 1);
+      const gross = solveChain(recycleProdFixture, 'Desc_P_C', 1);
       assertClose(gross.steps.find((s) => s.item === 'Desc_B_C').machines, 1); // 1 machine making B
       assertClose(gross.raw.find((r) => r.item === 'Desc_R_C').rate, 1);
       assertClose(gross.byproducts.find((b) => b.item === 'Desc_B_C').surplus, 2);
 
-      const sol = solveChain(recycleProdFixture, 'Recipe_P_C', 1, { recycle: ['Desc_B_C'] });
+      const sol = solveChain(recycleProdFixture, 'Desc_P_C', 1, { recycle: ['Desc_B_C'] });
       const bStep = sol.steps.find((s) => s.item === 'Desc_B_C');
       assertClose(bStep.machines, 0);          // demand fully met by the byproduct
       assertEqual(bStep.recyclable, true);     // step kept so the toggle stays reachable
@@ -198,7 +260,7 @@
       assertClose(b.credited, 1); assertClose(b.surplus, 1);
     }],
     ['tree nodes carry recycle flags (toggle lives on the tree)', function () {
-      const sol = solveChain(recycleProdFixture, 'Recipe_P_C', 1, { recycle: ['Desc_B_C'] });
+      const sol = solveChain(recycleProdFixture, 'Desc_P_C', 1, { recycle: ['Desc_B_C'] });
       let bNode = null, pNode = null;
       (function walk(n) {
         if (n.item === 'Desc_B_C' && !bNode) bNode = n;
@@ -212,7 +274,7 @@
 
     // --- external-input boundary cut ---
     ['providing an item turns it into a line input and cuts its sub-chain', function () {
-      const sol = solveChain(solverFixture, 'Recipe_Widget_C', 1, { provided: ['Desc_Ingot_C'] });
+      const sol = solveChain(solverFixture, 'Desc_Widget_C', 1, { provided: ['Desc_Ingot_C'] });
       assertEqual(sol.lineInputs.length, 1);
       assertEqual(sol.lineInputs[0].item, 'Desc_Ingot_C');
       assertClose(sol.lineInputs[0].rate, 5);                    // 2 (plate) + 3 (rod)
@@ -222,18 +284,18 @@
       assertEqual(sol.byproducts.length, 0);                     // Slag came from the Ingot recipe
     }],
     ['a provided item is credited like raw (byproduct offsets the import)', function () {
-      const plain = solveChain(recycleProdFixture, 'Recipe_P_C', 1, { provided: ['Desc_B_C'] });
+      const plain = solveChain(recycleProdFixture, 'Desc_P_C', 1, { provided: ['Desc_B_C'] });
       assertClose(plain.lineInputs.find((i) => i.item === 'Desc_B_C').rate, 1); // Q needs 1 B, imported
       assertEqual(plain.raw.some((r) => r.item === 'Desc_R_C'), false);         // B no longer built here
       assertClose(plain.byproducts.find((b) => b.item === 'Desc_B_C').surplus, 2); // uncredited
 
-      const sol = solveChain(recycleProdFixture, 'Recipe_P_C', 1, { provided: ['Desc_B_C'], recycle: ['Desc_B_C'] });
+      const sol = solveChain(recycleProdFixture, 'Desc_P_C', 1, { provided: ['Desc_B_C'], recycle: ['Desc_B_C'] });
       assertClose(sol.lineInputs.find((i) => i.item === 'Desc_B_C').rate, 0);   // byproduct covers the import
       const b = sol.byproducts.find((x) => x.item === 'Desc_B_C');
       assertClose(b.credited, 1); assertClose(b.surplus, 1);
     }],
     ['tree annotates provided leaves and which nodes can be provided', function () {
-      const sol = solveChain(solverFixture, 'Recipe_Widget_C', 1, { provided: ['Desc_Ingot_C'] });
+      const sol = solveChain(solverFixture, 'Desc_Widget_C', 1, { provided: ['Desc_Ingot_C'] });
       let ingot = null, widget = null, oreSeen = false;
       (function walk(n) {
         if (n.item === 'Desc_Ingot_C' && !ingot) ingot = n;
@@ -250,38 +312,51 @@
 
     // --- bookmark carries deep choices ---
     ['bookmark round-trips with choiceKeys', function () {
-      const plan = { version: '1.2', entries: [{ recipeKey: 'Recipe_W_C', targetRate: 60, choiceKeys: ['Recipe_A_C', 'Recipe_B_C'] }] };
+      const plan = { version: '1.2', entries: [{ targetItem: 'Desc_W_C', targetRate: 60, choiceKeys: ['Recipe_A_C', 'Recipe_B_C'] }] };
       const back = decodePlan(encodePlan(plan));
       assertEqual(back.entries[0].choiceKeys.length, 2);
       assertEqual(back.entries[0].choiceKeys[0], 'Recipe_A_C');
     }],
     ['bookmark without choices decodes to empty lists', function () {
-      const back = decodePlan(encodePlan({ version: '1.2', entries: [{ recipeKey: 'Recipe_W_C', targetRate: 1 }] }));
+      const back = decodePlan(encodePlan({ version: '1.2', entries: [{ targetItem: 'Desc_W_C', targetRate: 1 }] }));
       assertEqual(back.entries[0].choiceKeys.length, 0);
       assertEqual(back.entries[0].recycleItems.length, 0);
       assertEqual(back.entries[0].providedItems.length, 0);
     }],
+    ['bookmark round-trips a non-default rootRecipe (alt or byproduct source)', function () {
+      const plan = { version: '1.2', entries: [{ targetItem: 'Desc_W_C', rootRecipe: 'Recipe_AltW_C', targetRate: 1 }] };
+      const back = decodePlan(encodePlan(plan));
+      assertEqual(back.entries[0].targetItem, 'Desc_W_C');
+      assertEqual(back.entries[0].rootRecipe, 'Recipe_AltW_C');
+    }],
+    ['old recipe-only bookmark decodes with no targetItem (UI derives it)', function () {
+      // Pre-item bookmarks carried only the root recipe; decode keeps it so the UI
+      // can map it back to an item.
+      const back = decodePlan(encodePlan({ version: '1.2', entries: [{ rootRecipe: 'Recipe_W_C', targetRate: 1 }] }));
+      assertEqual(back.entries[0].rootRecipe, 'Recipe_W_C');
+      assertEqual(back.entries[0].targetItem, undefined);
+    }],
     ['bookmark round-trips recycleItems', function () {
-      const plan = { version: '1.2', entries: [{ recipeKey: 'Recipe_A_C', targetRate: 1, recycleItems: ['Desc_W_C', 'Desc_B_C'] }] };
+      const plan = { version: '1.2', entries: [{ targetItem: 'Desc_A_C', targetRate: 1, recycleItems: ['Desc_W_C', 'Desc_B_C'] }] };
       const back = decodePlan(encodePlan(plan));
       assertEqual(back.entries[0].recycleItems.length, 2);
       assertEqual(back.entries[0].recycleItems[0], 'Desc_W_C');
     }],
     ['bookmark round-trips providedItems', function () {
-      const plan = { version: '1.2', entries: [{ recipeKey: 'Recipe_A_C', targetRate: 1, providedItems: ['Desc_X_C'] }] };
+      const plan = { version: '1.2', entries: [{ targetItem: 'Desc_A_C', targetRate: 1, providedItems: ['Desc_X_C'] }] };
       const back = decodePlan(encodePlan(plan));
       assertEqual(back.entries[0].providedItems.length, 1);
       assertEqual(back.entries[0].providedItems[0], 'Desc_X_C');
     }],
     ['bookmark round-trips a multi-line plan (one per entry)', function () {
       const plan = { version: '1.2', entries: [
-        { recipeKey: 'Recipe_A_C', targetRate: 60, choiceKeys: ['Recipe_X_C'] },
-        { recipeKey: 'Recipe_B_C', targetRate: 30, recycleItems: ['Desc_W_C'] },
-        { recipeKey: 'Recipe_C_C', targetRate: 15, providedItems: ['Desc_Y_C'] },
+        { targetItem: 'Desc_A_C', targetRate: 60, choiceKeys: ['Recipe_X_C'] },
+        { targetItem: 'Desc_B_C', targetRate: 30, recycleItems: ['Desc_W_C'] },
+        { targetItem: 'Desc_C_C', targetRate: 15, providedItems: ['Desc_Y_C'] },
       ] };
       const back = decodePlan(encodePlan(plan));
       assertEqual(back.entries.length, 3);
-      assertEqual(back.entries[0].recipeKey, 'Recipe_A_C');
+      assertEqual(back.entries[0].targetItem, 'Desc_A_C');
       assertEqual(back.entries[0].choiceKeys[0], 'Recipe_X_C');
       assertClose(back.entries[1].targetRate, 30);
       assertEqual(back.entries[1].recycleItems[0], 'Desc_W_C');

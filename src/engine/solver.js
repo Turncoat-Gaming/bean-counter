@@ -33,14 +33,17 @@
 (function (BC) {
   'use strict';
 
-  function solveChain(dataset, targetRecipeKey, targetRate, opts) {
+  function solveChain(dataset, targetItem, targetRate, opts) {
     opts = opts || {};
-    const targetRecipe = dataset.recipes[targetRecipeKey];
-    if (!targetRecipe) throw new Error('unknown recipe: ' + targetRecipeKey);
-    const targetItem = targetRecipe.outputs[0].item;
 
     // Per-item recipe choice: explicit override > raw-resource leaf > default.
+    // The target's root recipe is just its entry in `choices`: an explicit
+    // override (an alternate, or a byproduct source) or its default producer.
+    // outputFor() below scales by whichever output slot makes the target, so a
+    // byproduct target works the same as a primary one.
     const choices = Object.assign({}, opts.recipeChoices || {});
+    const targetRecipeKey = choices[targetItem] || BC.data.defaultRecipeForItem(dataset, targetItem);
+    if (!targetRecipeKey) throw new Error('no recipe makes item: ' + targetItem);
     choices[targetItem] = targetRecipeKey;
     const recycle = new Set(opts.recycle || []); // items whose byproducts are credited
     const provided = new Set(opts.provided || []); // items supplied externally (line inputs)
@@ -110,6 +113,7 @@
       return node;
     }
     const tree = buildTree(targetItem, targetRate, new Set());
+    tree.isTarget = true; // the root node picks from all recipes that output the target
 
     // Every item we actively produce (target + producible descendants).
     const produced = new Set();

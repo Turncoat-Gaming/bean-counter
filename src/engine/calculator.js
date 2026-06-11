@@ -22,14 +22,18 @@
     return recipe.outputs[0];
   }
 
-  // Core MVP calculation. targetRate = desired units/min of the primary product.
-  function computeRecipePlan(dataset, recipeKey, targetRate) {
+  // Core MVP calculation. targetRate = desired units/min of `targetItem` (any
+  // output slot — defaults to the primary product). Targeting a byproduct slot
+  // scales the recipe to that slot's rate; the other outputs become byproducts.
+  function computeRecipePlan(dataset, recipeKey, targetRate, targetItem) {
     const recipe = dataset.recipes[recipeKey];
     if (!recipe) throw new Error('unknown recipe: ' + recipeKey);
 
     const per = perMachineRates(recipe);
-    const primaryPerMachine = per.outputs[0].rate;
-    const machines = primaryPerMachine > 0 ? targetRate / primaryPerMachine : 0;
+    const targetIdx = targetItem ? per.outputs.findIndex((o) => o.item === targetItem) : 0;
+    const slot = targetIdx >= 0 ? targetIdx : 0;
+    const targetPerMachine = per.outputs[slot].rate;
+    const machines = targetPerMachine > 0 ? targetRate / targetPerMachine : 0;
     const scaleByMachines = (flow) => flow.map((f) => ({ item: f.item, rate: f.rate * machines }));
 
     const building = dataset.buildings[recipe.building];
@@ -44,8 +48,8 @@
       machines,
       power: machines * (building ? building.power : 0),
       inputs: scaleByMachines(per.inputs),
-      outputs,                       // includes the primary product…
-      byproducts: outputs.slice(1),  // …and these are the extras
+      outputs,                                          // includes the target slot…
+      byproducts: outputs.filter((_, i) => i !== slot), // …and these are the extras
     };
   }
 

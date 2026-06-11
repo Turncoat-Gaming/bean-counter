@@ -1,9 +1,11 @@
 // rate-calculator.js — the planner view. Owns DOM only; all math lives in the
 // engine. A doc holds one or more *lines* (one factory), shown as a stacked
-// accordion. Each line is the old single-plan planner: a target recipe + rate
-// with per-item recipe choices, ♻ recycle and 📦 supply-externally toggles, in
-// "Full chain" or "Single step" mode. A factory summary nets the lines together
-// and shows which line feeds which (the seam for factories/tabs later).
+// accordion. Each line is the old single-plan planner: a target *item* (any
+// manufacturable product or byproduct) + rate, with per-item recipe choices made
+// on the production tree, ♻ recycle and 📦 supply-externally toggles, in "Full
+// chain" or "Single step" mode. The main dropdown picks the item to make; the
+// tree's root node picks which recipe makes it (alternates and byproduct sources).
+// A factory summary nets the lines together and shows which line feeds which.
 // Classic script: exposes BeanCounter.ui.mountPlanner (loads over file://).
 (function (BC) {
   'use strict';
@@ -21,30 +23,21 @@
 
   function mountPlanner(root, dataset) {
     const data = BC.data;
-    const { computeRecipePlan, primaryOutput, perMachineRates } = BC.calculator;
+    const { computeRecipePlan } = BC.calculator;
     const { solveChain, rollUpFactory } = BC.solver;
     const { encodePlan, decodePlan } = BC.codec;
     const itemName = (i) => data.itemName(dataset, i);
     const isFluid = (i) => { const it = dataset.items[i]; return !!it && (it.form === 'liquid' || it.form === 'gas'); };
 
-    // The recipe picker is the same for every line — precompute its <option>s.
-    const pickerList = [];
-    for (const [key, recipe] of data.pickerRecipes(dataset)) {
-      const per = perMachineRates(recipe).outputs[0].rate;
-      const altN = data.alternateCount(dataset, key);
-      pickerList.push({
-        key,
-        label: recipe.name + ' — ' + fmt(per) + '/min ' + itemName(primaryOutput(recipe).item) +
-          (altN ? '  (+' + altN + ' alt)' : ''),
-      });
-    }
-    const firstRecipeKey = pickerList[0] && pickerList[0].key;
-    const recipeOptions = (activeKey) => {
-      const rep = data.representativeKey(dataset, activeKey);
-      return pickerList.map(({ key, label }) =>
-        '<option value="' + esc(key) + '"' + (key === rep ? ' selected' : '') + '>' + esc(label) + '</option>'
+    // The item picker is the same for every line — precompute its <option>s. The
+    // list is every manufacturable item (products and byproducts); which recipe
+    // makes the chosen item is picked later on the tree's root node.
+    const itemList = data.manufacturableItems(dataset).map((item) => ({ item, label: itemName(item) }));
+    const firstItem = itemList[0] && itemList[0].item;
+    const itemOptions = (activeItem) =>
+      itemList.map(({ item, label }) =>
+        '<option value="' + esc(item) + '"' + (item === activeItem ? ' selected' : '') + '>' + esc(label) + '</option>'
       ).join('');
-    };
 
     root.innerHTML =
       '<section id="lines"></section>' +
@@ -64,11 +57,11 @@
     let lines = [];
     function newLine() {
       return {
-        active: firstRecipeKey, targetRate: 60, mode: 'chain',
+        targetItem: firstItem,  // the item to make; its recipe lives in `choices`
+        targetRate: 60, mode: 'chain',
         choices: {}, recycle: new Set(), provided: new Set(),
         collapsed: new Set(),  // tree nodes collapsed (by path)
         expanded: true,        // accordion open
-        targetItem: null,
         summary: null,         // normalized {target,supplies,demands,raw,...} for the roll-up
         bmChoiceKeys: [], bmRecycle: [], bmProvided: [], // in-play overrides for the bookmark
       };
@@ -79,9 +72,13 @@
     const flowList = (list, getRate, getItem) =>
       list.map((x) => '<li><span>' + fmt(getRate(x)) + '/min</span> ' + esc(itemName(getItem(x))) + '</li>').join('');
 
-    // Recipe <select> for a step where there's a choice; empty otherwise.
+    // Recipe <select> for a step where there's a choice; empty otherwise. The
+    // target (root) node may be made from any recipe that outputs the item — incl.
+    // recipes where it's a byproduct; deeper nodes use their primary-product recipes.
     function recipeCell(step) {
-      const variants = data.recipesForItem(dataset, step.item);
+      const variants = step.isTarget
+        ? data.recipesOutputting(dataset, step.item)
+        : data.recipesForItem(dataset, step.item);
       if (variants.length <= 1) return '';
       const opts = variants.map((k) => {
         const r = dataset.recipes[k];
@@ -130,6 +127,10 @@
           recycleToggle(node) + provideToggle(node);
       } else if (node.raw) {                 // mined/extracted — a leaf
         body = toggle + '<span class="raw-tag">raw</span> ' + name + recycleToggle(node);
+      } else if (node.cycle) {               // recipe loop — truncated leaf (no machines)
+        body = toggle + '<span class="raw-tag warn">cycle</span> ' + name;
+      } else if (node.truncated) {           // tree too large — display cut here
+        body = toggle + '<span class="raw-tag">…</span> ' + name;
       } else {                               // built here
         body = toggle +
           '<span class="mach">' + fmt(node.machines) + '×</span> ' +
@@ -147,27 +148,10 @@
 
     // ---- per-line rendering -------------------------------------------------
 
-    function renderVariants(line, panel) {
-      const variantsEl = panel.querySelector('.variants');
-      const variants = data.variantsForRecipe(dataset, line.active);
-      if (variants.length <= 1) { variantsEl.hidden = true; variantsEl.innerHTML = ''; return; }
-      const altN = data.alternateCount(dataset, line.active);
-      const head = variants.length + ' recipes' + (altN ? ' · ' + altN + ' alternate' + (altN > 1 ? 's' : '') : '');
-      let html = '<div class="variants-head">' + head + '</div><div class="chips">';
-      for (const k of variants) {
-        const r = dataset.recipes[k];
-        const tag = r.alternate ? '<span class="tag">alt</span>' : '';
-        html += '<button type="button" class="chip' + (k === line.active ? ' active' : '') + '"' +
-          ' data-key="' + esc(k) + '">' + tag + esc(variantLabel(r.name)) + '</button>';
-      }
-      variantsEl.innerHTML = html + '</div>';
-      variantsEl.hidden = false;
-    }
-
     // Full chain: solve, render into the line's .result, stash its roll-up
     // summary + bookmark scratch, and return the solution (for head stats).
     function renderChain(line, resultEl) {
-      const sol = solveChain(dataset, line.active, line.targetRate, {
+      const sol = solveChain(dataset, line.targetItem, line.targetRate, {
         recipeChoices: line.choices, recycle: [...line.recycle], provided: [...line.provided],
       });
       const targetItem = sol.targetItem;
@@ -260,11 +244,12 @@
       return sol;
     }
 
-    // Single step: just the selected recipe.
+    // Single step: just the recipe chosen to make the target item.
     function renderSingle(line, resultEl) {
-      const plan = computeRecipePlan(dataset, line.active, line.targetRate);
-      const recipe = dataset.recipes[line.active];
-      const target = primaryOutput(recipe).item;
+      const rootKey = line.choices[line.targetItem] || data.defaultRecipeForItem(dataset, line.targetItem);
+      const recipe = dataset.recipes[rootKey];
+      const target = line.targetItem;
+      const plan = computeRecipePlan(dataset, rootKey, line.targetRate, target);
       resultEl.innerHTML =
         '<div class="headline"><strong>' + fmt(plan.machines) + '</strong> × ' + esc(plan.buildingName) +
         '<span class="power">' + fmt(plan.power) + ' MW</span></div>' +
@@ -305,7 +290,7 @@
 
     // A display name per line, derived from its product; duplicates get "#n".
     function lineNames() {
-      const names = lines.map((l) => itemName(l.targetItem || primaryOutput(dataset.recipes[l.active]).item));
+      const names = lines.map((l) => itemName(l.targetItem));
       const total = {};
       names.forEach((n) => { total[n] = (total[n] || 0) + 1; });
       const seen = {};
@@ -384,7 +369,7 @@
     // ---- structure / bookmarks ---------------------------------------------
 
     function linePanelHTML(line, i) {
-      const targetKey = line.targetItem || primaryOutput(dataset.recipes[line.active]).item;
+      const targetKey = line.targetItem;
       return '<section class="panel line' + (line.expanded ? '' : ' collapsed') + '" data-line="' + i + '">' +
         '<div class="line-head">' +
           '<button type="button" class="line-toggle" aria-label="Collapse or expand line"></button>' +
@@ -399,10 +384,9 @@
               '<button type="button" class="chip mode' + (line.mode === 'chain' ? ' active' : '') + '" data-mode="chain">Full chain</button>' +
               '<button type="button" class="chip mode' + (line.mode === 'single' ? ' active' : '') + '" data-mode="single">Single step</button>' +
             '</div>' +
-            '<div class="field"><label>Recipe</label><select class="recipe" aria-label="Recipe">' + recipeOptions(line.active) + '</select></div>' +
+            '<div class="field"><label>Item</label><select class="target-item" aria-label="Item to make">' + itemOptions(line.targetItem) + '</select></div>' +
             '<div class="field"><label>Target output (per min)</label>' +
               '<input class="rate" type="number" min="0" step="any" value="' + esc(line.targetRate) + '" aria-label="Target output per minute" /></div>' +
-            '<div class="variants" hidden></div>' +
           '</form>' +
           '<div class="result" aria-live="polite"></div>' +
         '</div>' +
@@ -415,18 +399,8 @@
       linesEl.innerHTML = lines.map((l, i) => linePanelHTML(l, i)).join('');
       lines.forEach((l, i) => {
         const panel = linesEl.children[i];
-        renderVariants(l, panel);
         renderLineResult(l, panel);
       });
-      renderFactory();
-      updateBookmark();
-    }
-
-    function setActive(line, panel, key) {
-      line.active = key;
-      panel.querySelector('.recipe').value = data.representativeKey(dataset, key);
-      renderVariants(line, panel);
-      renderLineResult(line, panel);
       renderFactory();
       updateBookmark();
     }
@@ -436,25 +410,44 @@
     }
 
     function updateBookmark() {
-      const entries = lines.map((l) => ({
-        recipeKey: l.active, targetRate: l.targetRate,
-        choiceKeys: l.mode === 'chain' ? l.bmChoiceKeys : [],
-        recycleItems: l.mode === 'chain' ? l.bmRecycle : [],
-        providedItems: l.mode === 'chain' ? l.bmProvided : [],
-      }));
+      const entries = lines.map((l) => {
+        const root = l.choices[l.targetItem];
+        const isDefault = root && root === data.defaultRecipeForItem(dataset, l.targetItem);
+        return {
+          targetItem: l.targetItem,
+          rootRecipe: (root && !isDefault) ? root : undefined, // store only a non-default pick
+          targetRate: l.targetRate,
+          choiceKeys: l.mode === 'chain' ? l.bmChoiceKeys : [],
+          recycleItems: l.mode === 'chain' ? l.bmRecycle : [],
+          providedItems: l.mode === 'chain' ? l.bmProvided : [],
+        };
+      });
       const bookmark = encodePlan({ version: dataset.gameVersion, entries });
       bookmarkEl.value = bookmark;
       history.replaceState(null, '', '#' + bookmark);
     }
 
+    // A decoded entry's target item, deriving it from an old recipe-only bookmark.
+    function entryTargetItem(e) {
+      if (e.targetItem) return e.targetItem;
+      const r = dataset.recipes[e.rootRecipe];
+      return r ? r.outputs[0].item : null;
+    }
+
     function entryToLine(e) {
+      const targetItem = entryTargetItem(e);
       const choices = {};
       for (const k of e.choiceKeys || []) {
         const r = dataset.recipes[k];
         if (r) choices[r.outputs[0].item] = k;
       }
+      // The root recipe is a per-item choice too — keep it only when non-default.
+      if (e.rootRecipe && dataset.recipes[e.rootRecipe] &&
+          e.rootRecipe !== data.defaultRecipeForItem(dataset, targetItem)) {
+        choices[targetItem] = e.rootRecipe;
+      }
       const l = newLine();
-      l.active = e.recipeKey;
+      l.targetItem = targetItem;
       l.targetRate = e.targetRate;
       l.choices = choices;
       l.recycle = new Set(e.recycleItems || []);
@@ -466,7 +459,10 @@
       const hash = location.hash.slice(1);
       if (!hash) return false;
       try {
-        const entries = (decodePlan(hash).entries || []).filter((e) => e && dataset.recipes[e.recipeKey]);
+        const entries = (decodePlan(hash).entries || []).filter((e) => {
+          const ti = e && entryTargetItem(e);
+          return ti && dataset.items[ti] && data.defaultRecipeForItem(dataset, ti);
+        });
         if (!entries.length) return false;
         lines = entries.map(entryToLine);
         rebuild();
@@ -496,13 +492,17 @@
         if (e.target.checked) line.recycle.add(e.target.dataset.item); else line.recycle.delete(e.target.dataset.item);
       } else if (e.target.matches('.provide-toggle')) {
         if (e.target.checked) line.provided.add(e.target.dataset.item); else line.provided.delete(e.target.dataset.item);
-      } else if (e.target.matches('.recipe')) {
-        setActive(line, panel, e.target.value);
-        return;
+      } else if (e.target.matches('.target-item')) {
+        line.targetItem = e.target.value;
+        delete line.choices[line.targetItem]; // new target starts on its default recipe
       } else if (e.target.matches('.step-recipe')) {
         const item = e.target.dataset.item, key = e.target.value;
-        if (item === line.targetItem) { setActive(line, panel, key); return; }
-        if (data.defaultRecipeKey(dataset, item) === key) delete line.choices[item];
+        // The target node picks the root recipe (default may be a byproduct source);
+        // deeper nodes pick among their primary-product recipes.
+        const def = item === line.targetItem
+          ? data.defaultRecipeForItem(dataset, item)
+          : data.defaultRecipeKey(dataset, item);
+        if (key === def) delete line.choices[item];
         else line.choices[item] = key;
       } else {
         return;
@@ -527,9 +527,6 @@
         }
         return;
       }
-      const chip = e.target.closest('.variants .chip');
-      if (chip) { setActive(line, panel, chip.dataset.key); return; }
-
       const tg = e.target.closest('.tree-toggle');
       if (tg && !tg.classList.contains('empty')) {
         const collapsed = tg.closest('li').classList.toggle('collapsed');

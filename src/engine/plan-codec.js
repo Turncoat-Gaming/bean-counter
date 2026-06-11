@@ -28,17 +28,22 @@
   }
 
   // Encode a working plan -> string.
-  //   { version, entries:[{ recipeKey, targetRate, choiceKeys:[recipeKey…],
-  //                          recycleItems:[itemKey…], providedItems:[itemKey…] }] }
-  // choiceKeys are per-step recipe overrides (deep alternates); the item each
-  // applies to is the recipe's primary product, so we store only the recipe key.
-  // recycleItems are item keys whose byproducts are credited back (recycling on).
-  // providedItems are item keys sourced externally (the chain stops there).
+  //   { version, entries:[{ targetItem, rootRecipe?, targetRate,
+  //                          choiceKeys:[recipeKey…], recycleItems:[itemKey…],
+  //                          providedItems:[itemKey…] }] }
+  // targetItem (`i`) is the line's product — what to make. rootRecipe (`r`) is the
+  // recipe chosen to make it, stored only when it differs from the item's default
+  // (e.g. an alternate, or a byproduct source). choiceKeys are deeper per-step
+  // recipe overrides (the item each applies to is the recipe's primary product, so
+  // we store only the recipe key). recycleItems are item keys whose byproducts are
+  // credited back (recycling on); providedItems are sourced externally.
+  // Back-compat: older bookmarks carry only `r`; decode derives the item from it.
   function encodePlan(plan) {
     const wire = {
       v: plan.version,
       e: plan.entries.map((x) => {
-        const o = { r: x.recipeKey, t: x.targetRate };
+        const o = { i: x.targetItem, t: x.targetRate };
+        if (x.rootRecipe) o.r = x.rootRecipe;
         if (x.choiceKeys && x.choiceKeys.length) o.c = x.choiceKeys;
         if (x.recycleItems && x.recycleItems.length) o.y = x.recycleItems;
         if (x.providedItems && x.providedItems.length) o.p = x.providedItems;
@@ -49,7 +54,8 @@
   }
 
   // Decode a bookmark string -> working plan. Throws on a malformed/foreign tag.
-  // Old bookmarks without `c`/`y`/`p` decode to empty lists.
+  // Old bookmarks without `c`/`y`/`p` decode to empty lists; `targetItem` may be
+  // absent on pre-item bookmarks (only `rootRecipe`) — the UI derives it.
   function decodePlan(str) {
     const s = String(str).trim();
     if (!s.startsWith(TAG)) throw new Error('not a bean-counter bookmark');
@@ -58,7 +64,7 @@
     return {
       version: wire.v,
       entries: (wire.e || []).map((x) => ({
-        recipeKey: x.r, targetRate: x.t,
+        targetItem: x.i, rootRecipe: x.r, targetRate: x.t,
         choiceKeys: x.c || [], recycleItems: x.y || [], providedItems: x.p || [],
       })),
     };

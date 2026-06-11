@@ -89,11 +89,83 @@
     return productIndex(dataset)[itemKey] || [];
   }
 
+  // Index every item that appears as *any* output (primary or byproduct) to the
+  // recipe keys producing it, standard-first then by name. Powers the item picker
+  // and the target node's recipe choices (which include byproduct sources).
+  function outputIndex(dataset) {
+    if (!dataset.__outputIndex) {
+      const idx = {};
+      for (const [key, r] of Object.entries(dataset.recipes)) {
+        for (const o of r.outputs) (idx[o.item] = idx[o.item] || new Set()).add(key);
+      }
+      const byKey = {};
+      for (const item of Object.keys(idx)) {
+        byKey[item] = [...idx[item]].sort((a, b) => {
+          const ra = dataset.recipes[a], rb = dataset.recipes[b];
+          if (!!ra.alternate !== !!rb.alternate) return ra.alternate ? 1 : -1;
+          return ra.name.localeCompare(rb.name);
+        });
+      }
+      Object.defineProperty(dataset, '__outputIndex', { value: byKey });
+    }
+    return dataset.__outputIndex;
+  }
+
+  // All recipe keys that output `itemKey` in any slot (standard first). Broader
+  // than recipesForItem — includes recipes where it's a byproduct.
+  function recipesOutputting(dataset, itemKey) {
+    return outputIndex(dataset)[itemKey] || [];
+  }
+
+  // Every item that can be made (appears as some recipe output) and isn't a raw
+  // resource — the main picker's option list, sorted by display name.
+  function manufacturableItems(dataset) {
+    if (!dataset.__manufacturable) {
+      const items = Object.keys(outputIndex(dataset))
+        .filter((it) => !(dataset.items[it] && dataset.items[it].resource))
+        .sort((a, b) => itemName(dataset, a).localeCompare(itemName(dataset, b)));
+      Object.defineProperty(dataset, '__manufacturable', { value: items });
+    }
+    return dataset.__manufacturable;
+  }
+
   // The default recipe to produce an item: its first standard recipe (or first
   // alternate if that's all there is), else null. Callers handle raw resources.
   function defaultRecipeKey(dataset, itemKey) {
     const group = recipesForItem(dataset, itemKey);
     return group.length ? group[0] : null;
+  }
+
+  // Does making `targetItem` via `recipeKey` loop back to `targetItem` through the
+  // default sub-recipes of its inputs? Bounded DFS; a shared `seen` set keeps it
+  // cheap and terminates on the cyclic data it's meant to detect. Used to skip
+  // packaging/unpackaging recipes (e.g. Unpackage Oil Residue ⇄ Package) when
+  // picking a sane default producer.
+  function loopsBackTo(dataset, recipeKey, targetItem) {
+    const seen = new Set();
+    function reaches(item, depth) {
+      if (item === targetItem) return true;
+      if (depth > 40 || seen.has(item)) return false;
+      seen.add(item);
+      const rk = defaultRecipeKey(dataset, item); // primary-only producer for intermediates
+      if (!rk) return false;                       // raw / no producer — a leaf
+      return dataset.recipes[rk].inputs.some((inp) => reaches(inp.item, depth + 1));
+    }
+    return dataset.recipes[recipeKey].inputs.some((inp) => reaches(inp.item, 0));
+  }
+
+  // The default recipe when an item is a *target*: its primary recipes first, then
+  // recipes that make it as a byproduct. Prefer the first candidate whose default
+  // sub-chain doesn't loop back to the item — so a byproduct/fluid target lands on
+  // a real producer (e.g. the Heavy Oil Residue recipe) rather than its unpackage
+  // recipe, which cycles. Falls back to the first candidate if every one loops.
+  // null only for raw items (nothing produces them).
+  function defaultRecipeForItem(dataset, itemKey) {
+    const primary = recipesForItem(dataset, itemKey);
+    const extra = recipesOutputting(dataset, itemKey).filter((k) => !primary.includes(k));
+    const candidates = primary.concat(extra);
+    if (!candidates.length) return null;
+    return candidates.find((k) => !loopsBackTo(dataset, k, itemKey)) || candidates[0];
   }
 
   // All recipe keys that produce the same primary product as `recipeKey`
@@ -123,6 +195,7 @@
     loadDataset, itemName, buildingName,
     pickerRecipes, variantsForRecipe, alternateCount, representativeKey,
     recipesForItem, defaultRecipeKey,
+    manufacturableItems, recipesOutputting, defaultRecipeForItem,
   };
   if (typeof module === 'object' && module.exports) module.exports = BC.data;
 })(globalThis.BeanCounter = globalThis.BeanCounter || {});

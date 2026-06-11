@@ -62,7 +62,10 @@ same `Docs.json` + version always produces byte-identical output.
   exists in `buildings`.
 - **Raw resources** (mined/extracted) appear as items but have no recipe; they're
   the leaves of any production chain.
-- **Alternates** are flagged with `"alternate": true`. The UI groups recipes by
-  their primary product and suppresses alternates from the main picker, offering
-  them as variants instead. Products with *only* alternate recipes (e.g. Polymer
-  Resin) keep their alternate in the picker so they stay reachable.
+- **Alternates** are flagged with `"alternate": true`. The main picker lists
+  *items* (every recipe output that isn't a raw resource — products and
+  byproducts alike); which recipe makes the chosen item is picked on the
+  production tree's root node, where standard recipes lead and alternates follow.
+  An item with no recipe of its own (a pure byproduct, e.g. Dissolved Silica) is
+  still targetable — `defaultRecipeForItem` falls back to a recipe that yields it
+  as a byproduct, and the chain scales to that output slot.

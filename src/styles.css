@@ -67,11 +67,7 @@ select, input[type="number"], input[type="text"] {
 /* plan-mode toggle */
 .modes { grid-column: 1 / -1; display: flex; gap: 0.4rem; }
 
-/* recipe variant selector (alternates) */
-.variants { grid-column: 1 / -1; }
-.variants[hidden] { display: none; }
-.variants-head { font-size: 0.8rem; color: var(--muted); margin-bottom: 0.45rem; }
-.chips { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+/* mode buttons (Full chain / Single step) reuse the chip pill styling */
 .chip {
   background: var(--panel-2);
   color: var(--ink);
@@ -130,6 +126,7 @@ button:hover { filter: brightness(1.05); }
 .node .item { font-weight: 500; }
 .node .rate { color: var(--muted); font-variant-numeric: tabular-nums; }
 .node .raw-tag { color: var(--muted); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.5px; }
+.node .raw-tag.warn { color: var(--error); }  /* a truncated recipe cycle */
 .tree-note { font-size: 0.8rem; margin: 0 0 0.5rem; }
 
 /* collapse/expand toggles */
