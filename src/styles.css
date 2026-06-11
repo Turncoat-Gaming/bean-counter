@@ -64,8 +64,25 @@ select, input[type="number"], input[type="text"] {
 }
 .calc-form { display: grid; gap: 0.9rem; grid-template-columns: 2fr 1fr; margin-bottom: 1rem; }
 
-/* plan-mode toggle */
+/* plan-mode toggle, and the driver toggle (Make an item / From a supply) */
 .modes { grid-column: 1 / -1; display: flex; gap: 0.4rem; }
+.drivers { margin-bottom: 0.1rem; }
+
+/* supply-driven line: stack the fields in one column */
+.calc-form.supply-form { grid-template-columns: 1fr; }
+
+/* the sized "→ N/min" output readout under the Make dropdown */
+.sized { margin-top: 0.35rem; color: var(--accent); font-variant-numeric: tabular-nums; }
+.sized .sized-rate { font-weight: 600; }
+.sized .sized-rate.muted { color: var(--muted); font-weight: 400; }
+
+/* "available in factory" hint + its link-style "use" button */
+.supply-avail { margin-left: 0.5rem; font-size: 0.85rem; }
+.use-surplus {
+  background: none; color: var(--accent); border: 0; padding: 0;
+  font: inherit; font-size: 0.85rem; text-decoration: underline; cursor: pointer;
+}
+.use-surplus:hover { filter: none; color: var(--ink); }
 
 /* mode buttons (Full chain / Single step) reuse the chip pill styling */
 .chip {

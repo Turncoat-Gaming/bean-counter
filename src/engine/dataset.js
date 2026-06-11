@@ -129,6 +129,59 @@
     return dataset.__manufacturable;
   }
 
+  // Index every item consumed by some recipe -> the recipe keys consuming it. The
+  // forward (output->next-recipe) counterpart of outputIndex; powers reachability.
+  function consumeIndex(dataset) {
+    if (!dataset.__consumeIndex) {
+      const idx = {};
+      for (const [key, r] of Object.entries(dataset.recipes)) {
+        for (const inp of r.inputs) (idx[inp.item] = idx[inp.item] || new Set()).add(key);
+      }
+      Object.defineProperty(dataset, '__consumeIndex', { value: idx });
+    }
+    return dataset.__consumeIndex;
+  }
+
+  // Every item that's consumed by some recipe — the things you can usefully name as
+  // a *supply* to make something from. Sorted by display name. Includes raws.
+  function inputItems(dataset) {
+    if (!dataset.__inputItems) {
+      const items = Object.keys(consumeIndex(dataset))
+        .sort((a, b) => itemName(dataset, a).localeCompare(itemName(dataset, b)));
+      Object.defineProperty(dataset, '__inputItems', { value: items });
+    }
+    return dataset.__inputItems;
+  }
+
+  // Every manufacturable item reachable *forward* from a supply item — i.e. anything
+  // you can produce along some path that consumes it (its consumers' outputs, and
+  // theirs, transitively). Excludes the source itself and raw resources; sorted by
+  // display name. Cached per source. Drives the "what can I make from this?" list.
+  function reachableFrom(dataset, sourceItem) {
+    if (!dataset.__reachable) Object.defineProperty(dataset, '__reachable', { value: new Map() });
+    if (dataset.__reachable.has(sourceItem)) return dataset.__reachable.get(sourceItem);
+    const cons = consumeIndex(dataset);
+    const reached = new Set();   // items produced downstream of the source
+    const visited = new Set();   // items whose consumers we've already expanded
+    const queue = [sourceItem];
+    while (queue.length) {
+      const item = queue.shift();
+      if (visited.has(item)) continue;
+      visited.add(item);
+      for (const rk of cons[item] || []) {
+        for (const o of dataset.recipes[rk].outputs) {
+          if (!reached.has(o.item)) { reached.add(o.item); queue.push(o.item); }
+        }
+      }
+    }
+    reached.delete(sourceItem);
+    const list = [...reached]
+      .filter((it) => !(dataset.items[it] && dataset.items[it].resource))
+      .sort((a, b) => itemName(dataset, a).localeCompare(itemName(dataset, b)));
+    dataset.__reachable.set(sourceItem, list);
+    return list;
+  }
+
   // The default recipe to produce an item: its first standard recipe (or first
   // alternate if that's all there is), else null. Callers handle raw resources.
   function defaultRecipeKey(dataset, itemKey) {
@@ -196,6 +249,7 @@
     pickerRecipes, variantsForRecipe, alternateCount, representativeKey,
     recipesForItem, defaultRecipeKey,
     manufacturableItems, recipesOutputting, defaultRecipeForItem,
+    inputItems, reachableFrom,
   };
   if (typeof module === 'object' && module.exports) module.exports = BC.data;
 })(globalThis.BeanCounter = globalThis.BeanCounter || {});

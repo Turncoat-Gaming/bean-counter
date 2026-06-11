@@ -259,6 +259,48 @@
     };
   }
 
+  // sizeFromSupplies — drive a chain *forward* from fixed input supplies instead of
+  // a target output rate. `supplies` is [{item, rate}]. The chain is linear, so we
+  // solve it once at unit output to read how much of each supply one unit of the
+  // target draws, then set the output to the smallest supply÷draw — the binding
+  // constraint. Whatever isn't binding reports leftover slack. Pure; reuses
+  // solveChain (so recipe choices, recycle and provided all apply identically).
+  //
+  // For now the UI passes a single supply (the primary), but the signature is plural
+  // so secondary constrained supplies can be added later without reshaping callers.
+  // If the chosen path draws *none* of the supplies, output is unbounded: we return
+  // rate 0 with sizing.unbound so the caller can explain rather than show infinity.
+  //
+  // Each supply is the chain's *boundary*: we mark it `provided` so the solver stops
+  // there (and surfaces it as a line input) rather than manufacturing it — otherwise
+  // a supply that happens to have its own recipe (e.g. Heavy Oil Residue from Crude
+  // Oil) would be expanded away and draw nothing of what you actually hold.
+  function sizeFromSupplies(dataset, targetItem, supplies, opts) {
+    opts = opts || {};
+    supplies = (supplies || []).filter((s) => s && s.rate > 1e-9);
+    const provided = new Set(opts.provided || []);
+    supplies.forEach((s) => provided.add(s.item));
+    opts = Object.assign({}, opts, { provided: [...provided] });
+    const unit = solveChain(dataset, targetItem, 1, opts);
+    const drawOf = (item) => {
+      const row = unit.raw.find((r) => r.item === item) || unit.lineInputs.find((r) => r.item === item);
+      return row ? row.rate : 0;
+    };
+    let targetRate = Infinity, binding = null;
+    const constraints = supplies.map((s) => {
+      const draw = drawOf(s.item);
+      const max = draw > 1e-9 ? s.rate / draw : Infinity;
+      if (max < targetRate) { targetRate = max; binding = s.item; }
+      return { item: s.item, supply: s.rate, draw, max };
+    });
+    const unbound = !isFinite(targetRate);
+    const rate = unbound ? 0 : targetRate;
+    const plan = solveChain(dataset, targetItem, rate, opts);
+    constraints.forEach((c) => { c.used = c.draw * rate; c.slack = c.supply - c.used; });
+    plan.sizing = { supplies: constraints, binding, targetRate: rate, unbound };
+    return plan;
+  }
+
   // rollUpFactory — aggregate several independently-solved lines into one factory
   // view. Pure. Each line is normalized (by the caller) to:
   //   { target, supplies:[{item,rate}], demands:[{item,rate}], raw:[{item,rate}],
@@ -347,6 +389,6 @@
     return { power, machines, byBuilding, raw, routes: merged, outputs, unmet };
   }
 
-  BC.solver = { solveChain, rollUpFactory };
+  BC.solver = { solveChain, sizeFromSupplies, rollUpFactory };
   if (typeof module === 'object' && module.exports) module.exports = BC.solver;
 })(globalThis.BeanCounter = globalThis.BeanCounter || {});

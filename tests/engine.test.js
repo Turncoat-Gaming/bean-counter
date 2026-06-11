@@ -17,7 +17,7 @@
   const BC = globalThis.BeanCounter;
   const { perMachineRates, computeRecipePlan } = BC.calculator;
   const { encodePlan, decodePlan } = BC.codec;
-  const { solveChain, rollUpFactory } = BC.solver;
+  const { solveChain, sizeFromSupplies, rollUpFactory } = BC.solver;
   const data = BC.data;
 
   // A tiny self-contained fixture so tests don't depend on the generated dataset.
@@ -361,6 +361,56 @@
       assertClose(back.entries[1].targetRate, 30);
       assertEqual(back.entries[1].recycleItems[0], 'Desc_W_C');
       assertEqual(back.entries[2].providedItems[0], 'Desc_Y_C');
+    }],
+
+    // --- supply-driven sizing (forward from a supply) ---
+    ['reachableFrom lists forward-reachable products, minus the source and raws', function () {
+      const r = data.reachableFrom(solverFixture, 'Desc_Ore_C');
+      assertEqual(r.includes('Desc_Widget_C'), true);
+      assertEqual(r.includes('Desc_Ingot_C'), true);
+      assertEqual(r.includes('Desc_Slag_C'), true);
+      assertEqual(r.includes('Desc_Ore_C'), false);    // the source itself is excluded
+      assertEqual(r.includes('Desc_AltOre_C'), false); // a raw, and nothing outputs it
+      // a downstream supply has a smaller forward frontier
+      const rp = data.reachableFrom(solverFixture, 'Desc_Plate_C');
+      assertEqual(rp.includes('Desc_Widget_C'), true); // Plate → Widget
+      assertEqual(rp.includes('Desc_Ingot_C'), false); // Ingot is upstream of Plate, not reachable
+    }],
+    ['inputItems lists consumed items (incl. raws), excludes never-consumed products', function () {
+      const ins = data.inputItems(solverFixture);
+      assertEqual(ins.includes('Desc_Ore_C'), true);     // a raw, but consumed → a valid supply
+      assertEqual(ins.includes('Desc_Ingot_C'), true);
+      assertEqual(ins.includes('Desc_Widget_C'), false); // nothing consumes Widget
+    }],
+    ['sizeFromSupplies sizes the output to the binding supply, consuming it fully', function () {
+      const plan = sizeFromSupplies(solverFixture, 'Desc_Widget_C', [{ item: 'Desc_Ore_C', rate: 50 }]);
+      assertClose(plan.sizing.targetRate, 10);    // 50 Ore ÷ 5 Ore-per-Widget
+      assertEqual(plan.sizing.binding, 'Desc_Ore_C');
+      assertEqual(plan.sizing.unbound, false);
+      assertClose(plan.targetRate, 10);
+      // the supply is the chain boundary → it surfaces as a line input, fully drawn
+      assertClose(plan.lineInputs.find((r) => r.item === 'Desc_Ore_C').rate, 50);
+      assertEqual(plan.raw.some((r) => r.item === 'Desc_Ore_C'), false);
+      assertClose(plan.sizing.supplies[0].slack, 0, 1e-6);
+    }],
+    ['sizeFromSupplies flags an unbound path (chosen recipe ignores the supply)', function () {
+      // Widget via the Pure Ingot path draws Alt Ore, not Ore — so an Ore supply binds nothing.
+      const plan = sizeFromSupplies(solverFixture, 'Desc_Widget_C', [{ item: 'Desc_Ore_C', rate: 50 }],
+        { recipeChoices: { Desc_Ingot_C: 'Recipe_Alternate_PureIngot_C' } });
+      assertEqual(plan.sizing.unbound, true);
+      assertClose(plan.sizing.targetRate, 0);
+    }],
+    ['bookmark round-trips a supply-driven line; rate lines default to driver "rate"', function () {
+      const plan = { version: '1.2', entries: [
+        { targetItem: 'Desc_Fuel_C', targetRate: 26.7, driver: 'supply', sourceItem: 'Desc_HOR_C', supplyRate: 40 },
+        { targetItem: 'Desc_W_C', targetRate: 1 },
+      ] };
+      const back = decodePlan(encodePlan(plan));
+      assertEqual(back.entries[0].driver, 'supply');
+      assertEqual(back.entries[0].sourceItem, 'Desc_HOR_C');
+      assertClose(back.entries[0].supplyRate, 40);
+      assertEqual(back.entries[1].driver, 'rate');       // absent flag → rate-driven
+      assertEqual(back.entries[1].sourceItem, undefined);
     }],
 
     // --- factory roll-up (multiple lines) ---

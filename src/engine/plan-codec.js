@@ -37,6 +37,12 @@
   // recipe overrides (the item each applies to is the recipe's primary product, so
   // we store only the recipe key). recycleItems are item keys whose byproducts are
   // credited back (recycling on); providedItems are sourced externally.
+  //
+  // A supply-driven line (`driver === 'supply'`) sizes its output from a fixed
+  // input instead of a target rate: it stores `d` (driver flag), `s` (the supply
+  // item) and `u` (the supply rate). `i`/`r`/`c`/`y`/`p` still describe the end
+  // product and its recipes; the target rate is re-derived on restore, so `t` is
+  // a (harmless) cache of the last sized value.
   // Back-compat: older bookmarks carry only `r`; decode derives the item from it.
   function encodePlan(plan) {
     const wire = {
@@ -47,6 +53,7 @@
         if (x.choiceKeys && x.choiceKeys.length) o.c = x.choiceKeys;
         if (x.recycleItems && x.recycleItems.length) o.y = x.recycleItems;
         if (x.providedItems && x.providedItems.length) o.p = x.providedItems;
+        if (x.driver === 'supply') { o.d = 1; o.s = x.sourceItem; o.u = x.supplyRate; }
         return o;
       }),
     };
@@ -66,6 +73,7 @@
       entries: (wire.e || []).map((x) => ({
         targetItem: x.i, rootRecipe: x.r, targetRate: x.t,
         choiceKeys: x.c || [], recycleItems: x.y || [], providedItems: x.p || [],
+        driver: x.d ? 'supply' : 'rate', sourceItem: x.s, supplyRate: x.u,
       })),
     };
   }

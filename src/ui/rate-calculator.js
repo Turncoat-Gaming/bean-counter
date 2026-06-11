@@ -5,6 +5,13 @@
 // on the production tree, ♻ recycle and 📦 supply-externally toggles, in "Full
 // chain" or "Single step" mode. The main dropdown picks the item to make; the
 // tree's root node picks which recipe makes it (alternates and byproduct sources).
+//
+// A line can instead be driven "From a supply": pick a source item + how much you
+// have, and the line lists what's reachable from it; choosing an end product sizes
+// the output to whatever that supply yields (the binding constraint), then solves
+// the rest backward. The root recipe's options show each path's yield so you can
+// pick the one that stretches the supply furthest.
+//
 // A factory summary nets the lines together and shows which line feeds which.
 // Classic script: exposes BeanCounter.ui.mountPlanner (loads over file://).
 (function (BC) {
@@ -24,7 +31,7 @@
   function mountPlanner(root, dataset) {
     const data = BC.data;
     const { computeRecipePlan } = BC.calculator;
-    const { solveChain, rollUpFactory } = BC.solver;
+    const { solveChain, sizeFromSupplies, rollUpFactory } = BC.solver;
     const { encodePlan, decodePlan } = BC.codec;
     const itemName = (i) => data.itemName(dataset, i);
     const isFluid = (i) => { const it = dataset.items[i]; return !!it && (it.form === 'liquid' || it.form === 'gas'); };
@@ -38,6 +45,56 @@
       itemList.map(({ item, label }) =>
         '<option value="' + esc(item) + '"' + (item === activeItem ? ' selected' : '') + '>' + esc(label) + '</option>'
       ).join('');
+
+    // The supply picker lists every item something consumes (incl. raws), since any
+    // of those can be a starting supply. The first input item is a sane default.
+    const sourceList = data.inputItems(dataset).map((item) => ({ item, label: itemName(item) }));
+    const firstSource = sourceList[0] && sourceList[0].item;
+    const optionList = (list, active) =>
+      list.map(({ item, label }) =>
+        '<option value="' + esc(item) + '"' + (item === active ? ' selected' : '') + '>' + esc(label) + '</option>'
+      ).join('');
+    const sourceOptions = (active) => optionList(sourceList, active);
+    // The "Make" list is per-line: what's reachable from that line's supply.
+    const makeOptions = (line) =>
+      optionList(data.reachableFrom(dataset, line.sourceItem).map((item) => ({ item, label: itemName(item) })), line.targetItem);
+
+    // How much of a supply line's source the end product draws when made via
+    // `rootKey`, treating the supply as the chain boundary (so a source with its own
+    // recipe isn't expanded away). 0 means that path doesn't consume the supply.
+    function sourceDraw(line, rootKey) {
+      const provided = [...new Set([...line.provided, line.sourceItem])];
+      const u = solveChain(dataset, line.targetItem, 1, {
+        recipeChoices: Object.assign({}, line.choices, { [line.targetItem]: rootKey }),
+        recycle: [...line.recycle], provided,
+      });
+      const row = u.raw.find((r) => r.item === line.sourceItem) || u.lineInputs.find((r) => r.item === line.sourceItem);
+      return row ? row.rate : 0;
+    }
+
+    // Land a supply line on a root recipe that actually consumes the supply (standard
+    // first) so the default view is useful — rather than the item's default recipe,
+    // which may bypass the supply entirely (e.g. Fuel from Crude Oil ignores HOR).
+    // An explicit pick that's already bound is kept; if nothing consumes it, leave it
+    // so the UI shows "this path doesn't use …".
+    function ensureBoundPath(line) {
+      const cur = line.choices[line.targetItem] || data.defaultRecipeForItem(dataset, line.targetItem);
+      if (cur && sourceDraw(line, cur) > 1e-9) return;
+      const bound = data.recipesOutputting(dataset, line.targetItem).find((k) => sourceDraw(line, k) > 1e-9);
+      if (bound) line.choices[line.targetItem] = bound;
+    }
+
+    // Keep a supply line's end product valid for its source: if the current target
+    // isn't reachable from the source, fall back to the first reachable item; then
+    // land on a recipe path that consumes the supply.
+    function reconcileSupplyTarget(line) {
+      const reach = data.reachableFrom(dataset, line.sourceItem);
+      if (reach.length && !reach.includes(line.targetItem)) {
+        line.targetItem = reach[0];
+        delete line.choices[line.targetItem];
+      }
+      ensureBoundPath(line);
+    }
 
     root.innerHTML =
       '<section id="lines"></section>' +
@@ -59,6 +116,8 @@
       return {
         targetItem: firstItem,  // the item to make; its recipe lives in `choices`
         targetRate: 60, mode: 'chain',
+        driver: 'rate',                            // 'rate' (target output) | 'supply' (size from a supply)
+        sourceItem: firstSource, supplyRate: 60,   // supply-driven inputs (the supply, and how much)
         choices: {}, recycle: new Set(), provided: new Set(),
         collapsed: new Set(),  // tree nodes collapsed (by path)
         expanded: true,        // accordion open
@@ -75,14 +134,20 @@
     // Recipe <select> for a step where there's a choice; empty otherwise. The
     // target (root) node may be made from any recipe that outputs the item — incl.
     // recipes where it's a byproduct; deeper nodes use their primary-product recipes.
-    function recipeCell(step) {
+    // `pathYields` (supply-driven lines only) maps each root recipe to the output it
+    // would yield from the supply, shown inline so you can pick the best path.
+    function recipeCell(step, pathYields) {
       const variants = step.isTarget
         ? data.recipesOutputting(dataset, step.item)
         : data.recipesForItem(dataset, step.item);
       if (variants.length <= 1) return '';
       const opts = variants.map((k) => {
         const r = dataset.recipes[k];
-        const lbl = variantLabel(r.name) + (r.alternate ? ' (alt)' : '');
+        let lbl = variantLabel(r.name) + (r.alternate ? ' (alt)' : '');
+        if (step.isTarget && pathYields) {
+          const y = pathYields[k];
+          lbl += ' — ' + (y == null ? 'n/a' : fmt(y) + '/min');
+        }
         return '<option value="' + esc(k) + '"' + (k === step.recipeKey ? ' selected' : '') + '>' + esc(lbl) + '</option>';
       }).join('');
       return '<select class="step-recipe" data-item="' + esc(step.item) +
@@ -113,7 +178,7 @@
 
     // One node of the production tree (nested <ul> gives the indentation). `path`
     // is the route from the root so collapse state maps to the right occurrence.
-    function treeNode(node, path, collapsedSet) {
+    function treeNode(node, path, collapsedSet, pathYields) {
       const hasKids = node.children && node.children.length;
       const toggle = hasKids
         ? '<button type="button" class="tree-toggle" data-path="' + esc(path) + '" aria-label="Collapse or expand"></button>'
@@ -135,13 +200,13 @@
         body = toggle +
           '<span class="mach">' + fmt(node.machines) + '×</span> ' +
           '<span class="bld">' + esc(node.buildingName) + '</span> ' +
-          name + recipeCell(node) + recycleToggle(node) + provideToggle(node);
+          name + recipeCell(node, node.isTarget ? pathYields : null) + recycleToggle(node) + provideToggle(node);
       }
 
       const collapsed = hasKids && collapsedSet.has(path);
       let html = '<li class="' + (collapsed ? 'collapsed' : '') + '"><div class="node">' + body + '</div>';
       if (hasKids) {
-        html += '<ul>' + node.children.map((c) => treeNode(c, path + '>' + c.item, collapsedSet)).join('') + '</ul>';
+        html += '<ul>' + node.children.map((c) => treeNode(c, path + '>' + c.item, collapsedSet, pathYields)).join('') + '</ul>';
       }
       return html + '</li>';
     }
@@ -151,9 +216,22 @@
     // Full chain: solve, render into the line's .result, stash its roll-up
     // summary + bookmark scratch, and return the solution (for head stats).
     function renderChain(line, resultEl) {
-      const sol = solveChain(dataset, line.targetItem, line.targetRate, {
-        recipeChoices: line.choices, recycle: [...line.recycle], provided: [...line.provided],
-      });
+      const opts = { recipeChoices: line.choices, recycle: [...line.recycle], provided: [...line.provided] };
+      let sol, pathYields = null;
+      if (line.driver === 'supply') {
+        // Size the output from the supply, and re-derive the (display) target rate.
+        sol = sizeFromSupplies(dataset, line.targetItem, [{ item: line.sourceItem, rate: line.supplyRate }], opts);
+        line.targetRate = sol.sizing.targetRate;
+        // Per-path yield hints for the root recipe selector: how much each recipe
+        // that outputs the end product would make from this supply.
+        pathYields = {};
+        for (const k of data.recipesOutputting(dataset, line.targetItem)) {
+          const draw = sourceDraw(line, k);
+          pathYields[k] = draw > 1e-9 ? line.supplyRate / draw : null;
+        }
+      } else {
+        sol = solveChain(dataset, line.targetItem, line.targetRate, opts);
+      }
       const targetItem = sol.targetItem;
 
       // Which overrides are actually in play (for a tidy bookmark).
@@ -185,7 +263,7 @@
         .map(([k, m]) => fmt(m) + '× ' + esc(data.buildingName(dataset, k)))
         .join(' · ');
 
-      const tree = '<ul class="tree">' + treeNode(sol.tree, sol.tree.item, line.collapsed) + '</ul>';
+      const tree = '<ul class="tree">' + treeNode(sol.tree, sol.tree.item, line.collapsed, pathYields) + '</ul>';
 
       const rows = sol.steps.map((s) =>
         '<tr>' +
@@ -273,9 +351,11 @@
     function renderLineResult(line, panel) {
       const resultEl = panel.querySelector('.result');
       let machines, power, targetKey;
-      if (line.mode === 'chain') {
+      // Supply-driven lines are always a full chain (there's a chain to size through).
+      if (line.driver === 'supply' || line.mode === 'chain') {
         const sol = renderChain(line, resultEl);
         machines = sol.totals.machines; power = sol.totals.power; targetKey = sol.targetItem;
+        if (line.driver === 'supply') updateSupplyReadout(line, panel, sol.sizing);
       } else {
         const r = renderSingle(line, resultEl);
         machines = r.machines; power = r.power; targetKey = r.target;
@@ -284,6 +364,29 @@
       panel.querySelector('.line-title').textContent = itemName(targetKey);
       panel.querySelector('.line-rate').textContent = fmt(line.targetRate) + '/min';
       panel.querySelector('.line-stats').textContent = fmt(machines) + '× · ' + fmt(power) + ' MW';
+    }
+
+    // Fill the "→ N/min" sized readout and the "available in factory" surplus hint
+    // on a supply-driven line's form (the form itself isn't re-rendered each keystroke).
+    function updateSupplyReadout(line, panel, sizing) {
+      const sized = panel.querySelector('.sized-rate');
+      if (sized) {
+        sized.textContent = sizing.unbound
+          ? "this path doesn't use " + itemName(line.sourceItem)
+          : fmt(line.targetRate) + ' ' + itemName(line.targetItem) + '/min';
+        sized.classList.toggle('muted', sizing.unbound);
+      }
+      const avail = panel.querySelector('.supply-avail');
+      if (avail) {
+        let have = 0;
+        lines.forEach((other) => {
+          if (other === line || !other.summary) return;
+          (other.summary.supplies || []).forEach((s) => { if (s.item === line.sourceItem) have += s.rate; });
+        });
+        avail.innerHTML = have > 1e-9
+          ? fmt(have) + '/min in factory <button type="button" class="use-surplus" data-rate="' + esc(have) + '">use</button>'
+          : '';
+      }
     }
 
     // ---- factory roll-up ----------------------------------------------------
@@ -370,6 +473,30 @@
 
     function linePanelHTML(line, i) {
       const targetKey = line.targetItem;
+      const supply = line.driver === 'supply';
+      const driverTabs =
+        '<div class="modes drivers" role="group" aria-label="How to drive this line">' +
+          '<button type="button" class="chip driver' + (!supply ? ' active' : '') + '" data-driver="rate">Make an item</button>' +
+          '<button type="button" class="chip driver' + (supply ? ' active' : '') + '" data-driver="supply">From a supply</button>' +
+        '</div>';
+
+      const body = supply
+        ? driverTabs +
+          '<div class="field"><label>Supply</label><select class="source-item" aria-label="Supply item">' + sourceOptions(line.sourceItem) + '</select></div>' +
+          '<div class="field"><label>Available (per min)</label>' +
+            '<input class="supply-rate" type="number" min="0" step="any" value="' + esc(line.supplyRate) + '" aria-label="Available supply per minute" />' +
+            '<span class="supply-avail muted"></span></div>' +
+          '<div class="field"><label>Make</label><select class="make-item" aria-label="End product to make">' + makeOptions(line) + '</select>' +
+            '<div class="sized">→ <span class="sized-rate"></span></div></div>'
+        : driverTabs +
+          '<div class="modes" role="group" aria-label="Plan mode">' +
+            '<button type="button" class="chip mode' + (line.mode === 'chain' ? ' active' : '') + '" data-mode="chain">Full chain</button>' +
+            '<button type="button" class="chip mode' + (line.mode === 'single' ? ' active' : '') + '" data-mode="single">Single step</button>' +
+          '</div>' +
+          '<div class="field"><label>Item</label><select class="target-item" aria-label="Item to make">' + itemOptions(line.targetItem) + '</select></div>' +
+          '<div class="field"><label>Target output (per min)</label>' +
+            '<input class="rate" type="number" min="0" step="any" value="' + esc(line.targetRate) + '" aria-label="Target output per minute" /></div>';
+
       return '<section class="panel line' + (line.expanded ? '' : ' collapsed') + '" data-line="' + i + '">' +
         '<div class="line-head">' +
           '<button type="button" class="line-toggle" aria-label="Collapse or expand line"></button>' +
@@ -379,15 +506,7 @@
           '<button type="button" class="line-remove" aria-label="Remove line" title="Remove line">×</button>' +
         '</div>' +
         '<div class="line-body">' +
-          '<form class="calc-form">' +
-            '<div class="modes" role="group" aria-label="Plan mode">' +
-              '<button type="button" class="chip mode' + (line.mode === 'chain' ? ' active' : '') + '" data-mode="chain">Full chain</button>' +
-              '<button type="button" class="chip mode' + (line.mode === 'single' ? ' active' : '') + '" data-mode="single">Single step</button>' +
-            '</div>' +
-            '<div class="field"><label>Item</label><select class="target-item" aria-label="Item to make">' + itemOptions(line.targetItem) + '</select></div>' +
-            '<div class="field"><label>Target output (per min)</label>' +
-              '<input class="rate" type="number" min="0" step="any" value="' + esc(line.targetRate) + '" aria-label="Target output per minute" /></div>' +
-          '</form>' +
+          '<form class="calc-form' + (supply ? ' supply-form' : '') + '">' + body + '</form>' +
           '<div class="result" aria-live="polite"></div>' +
         '</div>' +
       '</section>';
@@ -413,13 +532,17 @@
       const entries = lines.map((l) => {
         const root = l.choices[l.targetItem];
         const isDefault = root && root === data.defaultRecipeForItem(dataset, l.targetItem);
+        const chain = l.driver === 'supply' || l.mode === 'chain'; // supply lines are always a chain
         return {
           targetItem: l.targetItem,
           rootRecipe: (root && !isDefault) ? root : undefined, // store only a non-default pick
           targetRate: l.targetRate,
-          choiceKeys: l.mode === 'chain' ? l.bmChoiceKeys : [],
-          recycleItems: l.mode === 'chain' ? l.bmRecycle : [],
-          providedItems: l.mode === 'chain' ? l.bmProvided : [],
+          choiceKeys: chain ? l.bmChoiceKeys : [],
+          recycleItems: chain ? l.bmRecycle : [],
+          providedItems: chain ? l.bmProvided : [],
+          driver: l.driver,
+          sourceItem: l.sourceItem,
+          supplyRate: l.supplyRate,
         };
       });
       const bookmark = encodePlan({ version: dataset.gameVersion, entries });
@@ -452,6 +575,14 @@
       l.choices = choices;
       l.recycle = new Set(e.recycleItems || []);
       l.provided = new Set(e.providedItems || []);
+      // Supply-driven line: restore the source + amount (the target rate re-derives
+      // on render). Ignore a stale/foreign source so the line still solves.
+      if (e.driver === 'supply' && e.sourceItem && dataset.items[e.sourceItem]) {
+        l.driver = 'supply';
+        l.sourceItem = e.sourceItem;
+        l.supplyRate = e.supplyRate != null ? e.supplyRate : l.supplyRate;
+        reconcileSupplyTarget(l);
+      }
       return l;
     }
 
@@ -474,10 +605,12 @@
     // ---- events (delegated on the lines container) --------------------------
 
     linesEl.addEventListener('input', (e) => {
-      if (!e.target.matches('.rate')) return;
       const panel = e.target.closest('.line');
+      if (!panel) return;
       const line = lines[+panel.dataset.line];
-      line.targetRate = Number(e.target.value) || 0;
+      if (e.target.matches('.rate')) line.targetRate = Number(e.target.value) || 0;
+      else if (e.target.matches('.supply-rate')) line.supplyRate = Number(e.target.value) || 0;
+      else return;
       renderLineResult(line, panel);   // form (incl. this input) is untouched → keeps focus
       renderFactory();
       updateBookmark();
@@ -488,13 +621,22 @@
       if (!panel) return;
       const line = lines[+panel.dataset.line];
 
+      if (e.target.matches('.source-item')) {
+        // The supply changed → the reachable "Make" list does too, so rebuild the form.
+        line.sourceItem = e.target.value;
+        reconcileSupplyTarget(line);
+        rebuild();
+        return;
+      }
+
       if (e.target.matches('.recycle-toggle')) {
         if (e.target.checked) line.recycle.add(e.target.dataset.item); else line.recycle.delete(e.target.dataset.item);
       } else if (e.target.matches('.provide-toggle')) {
         if (e.target.checked) line.provided.add(e.target.dataset.item); else line.provided.delete(e.target.dataset.item);
-      } else if (e.target.matches('.target-item')) {
+      } else if (e.target.matches('.target-item') || e.target.matches('.make-item')) {
         line.targetItem = e.target.value;
         delete line.choices[line.targetItem]; // new target starts on its default recipe
+        if (line.driver === 'supply') ensureBoundPath(line); // …but on a path that uses the supply
       } else if (e.target.matches('.step-recipe')) {
         const item = e.target.dataset.item, key = e.target.value;
         // The target node picks the root recipe (default may be a byproduct source);
@@ -517,6 +659,25 @@
       if (!panel) return;
       const i = +panel.dataset.line;
       const line = lines[i];
+
+      const drvBtn = e.target.closest('.driver');
+      if (drvBtn) {
+        const d = drvBtn.dataset.driver;
+        if (d !== line.driver) {
+          line.driver = d;
+          if (d === 'supply') reconcileSupplyTarget(line); // land the target on a reachable item
+          rebuild();
+        }
+        return;
+      }
+      const useS = e.target.closest('.use-surplus');
+      if (useS) {
+        line.supplyRate = Number(useS.dataset.rate) || 0;
+        const inp = panel.querySelector('.supply-rate');
+        if (inp) inp.value = line.supplyRate;
+        renderLineResult(line, panel); renderFactory(); updateBookmark();
+        return;
+      }
 
       const modeBtn = e.target.closest('.mode');
       if (modeBtn) {
