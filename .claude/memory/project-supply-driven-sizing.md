@@ -28,7 +28,15 @@ constraint). Linear, no new math, no LP.
 **Engine (pure, tested):**
 - `dataset.js`: `consumeIndex` (item→consuming recipes), `inputItems(ds)` (everything
   consumed, incl. raws — the supply picker list), `reachableFrom(ds, source)`
-  (forward BFS closure, minus source + raws, cached per source — the Make list).
+  (the Make list, cached per source). **Solver-aligned (fixed 2026-06-13):** it is
+  NOT a naive forward BFS — that leaked through byproducts and resource-conversion
+  outputs, offering items the chain can't actually draw the supply for (bauxite →
+  "AI Limiters", which solve to 0). Now it builds `fed` = supply + intermediates
+  whose *default producer* draws something fed (primary-product edges only, raws
+  skipped — mirrors how the solver expands), then offers a manufacturable item iff
+  *some* recipe outputting it (any slot, so alt root paths / byproduct targets
+  count) consumes a fed item. Every offered item therefore has a real binding path,
+  so `ensureBoundPath` always finds one.
 - `solver.js`: `sizeFromSupplies(ds, target, supplies, opts)` where `supplies` is
   `[{item,rate}]`. Marks each supply `provided`, solves at unit, output =
   `min(rate÷draw)` across supplies; argmin is `sizing.binding`; non-binding report

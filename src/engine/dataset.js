@@ -153,31 +153,41 @@
     return dataset.__inputItems;
   }
 
-  // Every manufacturable item reachable *forward* from a supply item — i.e. anything
-  // you can produce along some path that consumes it (its consumers' outputs, and
-  // theirs, transitively). Excludes the source itself and raw resources; sorted by
-  // display name. Cached per source. Drives the "what can I make from this?" list.
+  // Every manufacturable item you can actually make *from* a supply item — the
+  // "what can I make from this?" list for supply-driven sizing. It must match the
+  // solver: an item is only offered when some real production path for it draws
+  // the supply, otherwise sizeFromSupplies finds nothing to bind to and the line
+  // solves to zero (the bug this guards — bauxite once "reached" AI Limiters).
+  //
+  // So we mirror how the solver builds chains. `fed` is the supply plus every
+  // intermediate whose *default producer* (the recipe the solver would build it
+  // with) draws something already fed. We follow only that primary-product edge —
+  // never a recipe's byproducts (a stray water/silica byproduct used to flood the
+  // list) and never a resource-conversion output (the solver treats raws as leaves
+  // and never builds toward them). An item is then offered when *some* recipe that
+  // outputs it — in any slot, so an alternate root path or a byproduct target
+  // counts — consumes a fed item. Excludes the source and raws; sorted by name;
+  // cached per source.
   function reachableFrom(dataset, sourceItem) {
     if (!dataset.__reachable) Object.defineProperty(dataset, '__reachable', { value: new Map() });
     if (dataset.__reachable.has(sourceItem)) return dataset.__reachable.get(sourceItem);
     const cons = consumeIndex(dataset);
-    const reached = new Set();   // items produced downstream of the source
-    const visited = new Set();   // items whose consumers we've already expanded
+    const fed = new Set([sourceItem]); // the supply + intermediates whose default chain draws it
     const queue = [sourceItem];
     while (queue.length) {
       const item = queue.shift();
-      if (visited.has(item)) continue;
-      visited.add(item);
       for (const rk of cons[item] || []) {
-        for (const o of dataset.recipes[rk].outputs) {
-          if (!reached.has(o.item)) { reached.add(o.item); queue.push(o.item); }
-        }
+        const product = dataset.recipes[rk].outputs[0].item;                     // primary product only
+        if (fed.has(product)) continue;
+        if (dataset.items[product] && dataset.items[product].resource) continue; // raws aren't built
+        if (defaultRecipeKey(dataset, product) !== rk) continue;                 // only the solver's producer
+        fed.add(product); queue.push(product);
       }
     }
-    reached.delete(sourceItem);
-    const list = [...reached]
-      .filter((it) => !(dataset.items[it] && dataset.items[it].resource))
-      .sort((a, b) => itemName(dataset, a).localeCompare(itemName(dataset, b)));
+    const list = manufacturableItems(dataset).filter((it) =>
+      it !== sourceItem &&
+      recipesOutputting(dataset, it).some((rk) =>
+        dataset.recipes[rk].inputs.some((inp) => fed.has(inp.item))));
     dataset.__reachable.set(sourceItem, list);
     return list;
   }

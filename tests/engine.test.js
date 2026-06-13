@@ -376,6 +376,36 @@
       assertEqual(rp.includes('Desc_Widget_C'), true); // Plate → Widget
       assertEqual(rp.includes('Desc_Ingot_C'), false); // Ingot is upstream of Plate, not reachable
     }],
+    // The list must match what the solver can actually build from the supply: it
+    // follows real production edges only, never a recipe's *byproduct* or a
+    // resource-conversion output. Reaching those flooded the list with items the
+    // chain doesn't really draw the supply for (e.g. bauxite → AI Limiters).
+    ['reachableFrom does not leak through byproducts or resource conversions', function () {
+      const f = {
+        gameVersion: 'test',
+        items: {
+          Desc_Src_C: { name: 'Src', form: 'solid', resource: true },
+          Desc_Main_C: { name: 'Main', form: 'solid' },     // primary product of Src
+          Desc_BP_C: { name: 'Byprod', form: 'solid' },     // byproduct of the Src recipe
+          Desc_Far_C: { name: 'Far', form: 'solid' },        // made from the byproduct only
+          Desc_OtherRaw_C: { name: 'Other Raw', form: 'solid', resource: true },
+        },
+        buildings: { B_C: { name: 'M', power: 1 } },
+        recipes: {
+          // Src → Main (+ Byprod byproduct).
+          Recipe_Main_C: { name: 'Main', time: 60, building: 'B_C', inputs: [{ item: 'Desc_Src_C', amount: 1 }], outputs: [{ item: 'Desc_Main_C', amount: 1 }, { item: 'Desc_BP_C', amount: 1 }] },
+          // Far is reachable only through the byproduct — must NOT be offered.
+          Recipe_Far_C: { name: 'Far', time: 60, building: 'B_C', inputs: [{ item: 'Desc_BP_C', amount: 1 }], outputs: [{ item: 'Desc_Far_C', amount: 1 }] },
+          // Resource-conversion: Main → the raw Other Raw. Must not propagate.
+          Recipe_Convert_C: { name: 'Other Raw (Main)', time: 60, building: 'B_C', inputs: [{ item: 'Desc_Main_C', amount: 1 }], outputs: [{ item: 'Desc_OtherRaw_C', amount: 1 }] },
+        },
+      };
+      const r = data.reachableFrom(f, 'Desc_Src_C');
+      assertEqual(r.includes('Desc_Main_C'), true);  // real primary product of the supply
+      assertEqual(r.includes('Desc_BP_C'), true);    // a byproduct of a supply recipe is still targetable
+      assertEqual(r.includes('Desc_Far_C'), false);  // reachable only via the byproduct → excluded
+      assertEqual(r.includes('Desc_OtherRaw_C'), false); // a raw conversion output → excluded
+    }],
     ['inputItems lists consumed items (incl. raws), excludes never-consumed products', function () {
       const ins = data.inputItems(solverFixture);
       assertEqual(ins.includes('Desc_Ore_C'), true);     // a raw, but consumed → a valid supply
