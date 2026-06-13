@@ -36,6 +36,35 @@
     const itemName = (i) => data.itemName(dataset, i);
     const isFluid = (i) => { const it = dataset.items[i]; return !!it && (it.form === 'liquid' || it.form === 'gas'); };
 
+    // Advanced Game Settings global multipliers (recipe parts cost, machine power).
+    // They rescale the math but not the structure, so we keep the static pickers on
+    // `dataset` and solve against this derived one. `solveDataset` is rebuilt only
+    // when a multiplier changes; at 1×/1× it *is* `dataset`. Persisted in the bookmark.
+    const COST_MULTS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+    const POWER_MULTS = [0.25, 0.5, 0.75, 1, 2, 5];
+    let mods = { costMult: 1, powerMult: 1 };
+    let solveDataset = dataset;
+    const applyMods = () => { solveDataset = data.applyModifiers(dataset, mods); };
+    const costSel = document.querySelector('#cost-mult');
+    const powerSel = document.querySelector('#power-mult');
+    function fillMultSelect(sel, values, current) {
+      if (!sel) return;
+      sel.innerHTML = values.map((v) =>
+        '<option value="' + v + '"' + (v === current ? ' selected' : '') + '>×' + v + '</option>').join('');
+    }
+    function syncMultSelects() {
+      if (costSel) costSel.value = mods.costMult;
+      if (powerSel) powerSel.value = mods.powerMult;
+    }
+    function onModChange() {
+      mods = {
+        costMult: Number(costSel && costSel.value) || 1,
+        powerMult: Number(powerSel && powerSel.value) || 1,
+      };
+      applyMods();
+      rebuild();
+    }
+
     // The item picker is the same for every line — precompute its <option>s. The
     // list is every manufacturable item (products and byproducts); which recipe
     // makes the chosen item is picked later on the tree's root node.
@@ -64,7 +93,7 @@
     // recipe isn't expanded away). 0 means that path doesn't consume the supply.
     function sourceDraw(line, rootKey) {
       const provided = [...new Set([...line.provided, line.sourceItem])];
-      const u = solveChain(dataset, line.targetItem, 1, {
+      const u = solveChain(solveDataset, line.targetItem, 1, {
         recipeChoices: Object.assign({}, line.choices, { [line.targetItem]: rootKey }),
         recycle: [...line.recycle], provided,
       });
@@ -220,7 +249,7 @@
       let sol, pathYields = null;
       if (line.driver === 'supply') {
         // Size the output from the supply, and re-derive the (display) target rate.
-        sol = sizeFromSupplies(dataset, line.targetItem, [{ item: line.sourceItem, rate: line.supplyRate }], opts);
+        sol = sizeFromSupplies(solveDataset, line.targetItem, [{ item: line.sourceItem, rate: line.supplyRate }], opts);
         line.targetRate = sol.sizing.targetRate;
         // Per-path yield hints for the root recipe selector: how much each recipe
         // that outputs the end product would make from this supply.
@@ -230,7 +259,7 @@
           pathYields[k] = draw > 1e-9 ? line.supplyRate / draw : null;
         }
       } else {
-        sol = solveChain(dataset, line.targetItem, line.targetRate, opts);
+        sol = solveChain(solveDataset, line.targetItem, line.targetRate, opts);
       }
       const targetItem = sol.targetItem;
 
@@ -327,7 +356,7 @@
       const rootKey = line.choices[line.targetItem] || data.defaultRecipeForItem(dataset, line.targetItem);
       const recipe = dataset.recipes[rootKey];
       const target = line.targetItem;
-      const plan = computeRecipePlan(dataset, rootKey, line.targetRate, target);
+      const plan = computeRecipePlan(solveDataset, rootKey, line.targetRate, target);
       resultEl.innerHTML =
         '<div class="headline"><strong>' + fmt(plan.machines) + '</strong> × ' + esc(plan.buildingName) +
         '<span class="power">' + fmt(plan.power) + ' MW</span></div>' +
@@ -545,7 +574,10 @@
           supplyRate: l.supplyRate,
         };
       });
-      const bookmark = encodePlan({ version: dataset.gameVersion, entries });
+      const bookmark = encodePlan({
+        version: dataset.gameVersion, entries,
+        costMult: mods.costMult, powerMult: mods.powerMult,
+      });
       bookmarkEl.value = bookmark;
       history.replaceState(null, '', '#' + bookmark);
     }
@@ -590,11 +622,17 @@
       const hash = location.hash.slice(1);
       if (!hash) return false;
       try {
-        const entries = (decodePlan(hash).entries || []).filter((e) => {
+        const plan = decodePlan(hash);
+        const entries = (plan.entries || []).filter((e) => {
           const ti = e && entryTargetItem(e);
           return ti && dataset.items[ti] && data.defaultRecipeForItem(dataset, ti);
         });
         if (!entries.length) return false;
+        // Global multipliers travel with the plan; set them before solving so the
+        // derived dataset is in place when entries (incl. supply sizing) are built.
+        mods = { costMult: plan.costMult || 1, powerMult: plan.powerMult || 1 };
+        applyMods();
+        syncMultSelects();
         lines = entries.map(entryToLine);
         rebuild();
         return true;
@@ -721,6 +759,11 @@
     root.querySelector('#copy').addEventListener('click', async () => {
       try { await navigator.clipboard.writeText(bookmarkEl.value); } catch (e) { bookmarkEl.select(); }
     });
+
+    fillMultSelect(costSel, COST_MULTS, mods.costMult);
+    fillMultSelect(powerSel, POWER_MULTS, mods.powerMult);
+    if (costSel) costSel.onchange = onModChange;   // assignment (not addEventListener) so a re-mount never stacks handlers
+    if (powerSel) powerSel.onchange = onModChange;
 
     if (!restoreFromHash()) { lines = [newLine()]; rebuild(); }
   }

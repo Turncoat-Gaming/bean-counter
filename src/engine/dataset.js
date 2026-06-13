@@ -254,12 +254,48 @@
     return group.find((k) => set.has(k)) || recipeKey;
   }
 
+  // Apply the game's Advanced Game Settings global multipliers, returning a derived
+  // dataset (the original is left untouched). These rescale the *math* but not the
+  // structure — same items, recipes and reachability — so callers keep the static
+  // pickers on the original dataset and only solve against this one.
+  //   - `costMult` scales every recipe *input* amount (outputs are untouched).
+  //     Solid parts round UP to a whole item (10 × 0.25 → ceil 2.5 → 3); fluids
+  //     stay exact, since the game meters them continuously (Battery's 2.5 m³ acid
+  //     × 0.25 → 0.625, not 1).
+  //   - `powerMult` scales every building's power draw.
+  // Identity (1×/1×) returns the original dataset, so the default path costs
+  // nothing and keeps the structure caches warm.
+  function applyModifiers(dataset, mods) {
+    const costMult = (mods && mods.costMult) || 1;
+    const powerMult = (mods && mods.powerMult) || 1;
+    if (costMult === 1 && powerMult === 1) return dataset;
+    const isFluid = (item) => {
+      const it = dataset.items[item];
+      return !!it && (it.form === 'liquid' || it.form === 'gas');
+    };
+    const scaleInput = (inp) => {
+      if (costMult === 1) return inp;
+      const scaled = inp.amount * costMult;
+      const amount = isFluid(inp.item) ? scaled : Math.ceil(scaled - 1e-9);
+      return amount === inp.amount ? inp : { item: inp.item, amount };
+    };
+    const recipes = {};
+    for (const [k, r] of Object.entries(dataset.recipes)) {
+      recipes[k] = costMult === 1 ? r : Object.assign({}, r, { inputs: r.inputs.map(scaleInput) });
+    }
+    const buildings = {};
+    for (const [k, b] of Object.entries(dataset.buildings)) {
+      buildings[k] = powerMult === 1 ? b : Object.assign({}, b, { power: b.power * powerMult });
+    }
+    return Object.assign({}, dataset, { recipes, buildings });
+  }
+
   BC.data = {
     loadDataset, itemName, buildingName,
     pickerRecipes, variantsForRecipe, alternateCount, representativeKey,
     recipesForItem, defaultRecipeKey,
     manufacturableItems, recipesOutputting, defaultRecipeForItem,
-    inputItems, reachableFrom,
+    inputItems, reachableFrom, applyModifiers,
   };
   if (typeof module === 'object' && module.exports) module.exports = BC.data;
 })(globalThis.BeanCounter = globalThis.BeanCounter || {});

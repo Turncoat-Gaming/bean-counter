@@ -51,6 +51,9 @@ main { max-width: min(1320px, 96vw); margin: 1.5rem auto; padding: 0 1rem; displ
 
 .field { display: grid; gap: 0.35rem; }
 .field.inline { display: flex; align-items: center; gap: 0.5rem; }
+/* Global app settings (game data + the cost/power multipliers) grouped at the
+   top-right; wraps to a second row on a narrow screen. */
+.topbar .settings { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: flex-end; }
 label { color: var(--muted); font-size: 0.85rem; }
 
 select, input[type="number"], input[type="text"] {

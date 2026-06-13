@@ -443,6 +443,57 @@
       assertEqual(back.entries[1].sourceItem, undefined);
     }],
 
+    // --- Advanced Game Settings global multipliers (recipe cost, machine power) ---
+    ['applyModifiers scales inputs (solids round up, fluids exact) + power, leaving outputs & original untouched', function () {
+      const f = {
+        gameVersion: 'test',
+        items: {
+          Desc_Part_C: { name: 'Part', form: 'solid' },
+          Desc_Goo_C: { name: 'Goo', form: 'liquid' },
+          Desc_Thing_C: { name: 'Thing', form: 'solid' },
+        },
+        buildings: { B_C: { name: 'M', power: 10 } },
+        recipes: {
+          Recipe_Thing_C: { name: 'Thing', time: 60, building: 'B_C',
+            inputs: [{ item: 'Desc_Part_C', amount: 10 }, { item: 'Desc_Goo_C', amount: 2.5 }],
+            outputs: [{ item: 'Desc_Thing_C', amount: 1 }] },
+        },
+      };
+      const cheap = data.applyModifiers(f, { costMult: 0.25, powerMult: 0.5 });
+      assertClose(cheap.recipes.Recipe_Thing_C.inputs[0].amount, 3);     // solid: ceil(10×0.25=2.5) = 3
+      assertClose(cheap.recipes.Recipe_Thing_C.inputs[1].amount, 0.625); // fluid: 2.5×0.25 exact, no rounding
+      assertClose(cheap.recipes.Recipe_Thing_C.outputs[0].amount, 1);    // outputs never scaled
+      assertClose(cheap.buildings.B_C.power, 5);                          // 10×0.5
+      const dear = data.applyModifiers(f, { costMult: 2, powerMult: 5 });
+      assertClose(dear.recipes.Recipe_Thing_C.inputs[0].amount, 20);     // 10×2
+      assertClose(dear.recipes.Recipe_Thing_C.inputs[1].amount, 5);      // 2.5×2 exact
+      assertClose(dear.buildings.B_C.power, 50);                          // 10×5
+      assertEqual(data.applyModifiers(f, { costMult: 1, powerMult: 1 }), f); // identity → same object
+      assertClose(f.recipes.Recipe_Thing_C.inputs[0].amount, 10);        // original untouched
+      assertClose(f.buildings.B_C.power, 10);
+    }],
+    ['solveChain on a cost-multiplied dataset draws proportionally more raw', function () {
+      const base = solveChain(solverFixture, 'Desc_Ingot_C', 60);
+      const scaled = solveChain(data.applyModifiers(solverFixture, { costMult: 2 }), 'Desc_Ingot_C', 60);
+      assertEqual(base.raw.length, 1);
+      assertEqual(scaled.raw[0].item, base.raw[0].item);     // same raw, just more of it
+      assertClose(scaled.raw[0].rate, base.raw[0].rate * 2); // ×2 cost → 2× the input draw
+    }],
+    ['solveChain on a power-multiplied dataset scales total power', function () {
+      const base = solveChain(solverFixture, 'Desc_Ingot_C', 60);
+      const scaled = solveChain(data.applyModifiers(solverFixture, { powerMult: 5 }), 'Desc_Ingot_C', 60);
+      assertClose(scaled.totals.power, base.totals.power * 5);
+    }],
+    ['bookmark round-trips the global multipliers, defaulting to 1 when absent', function () {
+      const back = decodePlan(encodePlan({ version: '1.2', costMult: 0.25, powerMult: 5,
+        entries: [{ targetItem: 'Desc_W_C', targetRate: 1 }] }));
+      assertClose(back.costMult, 0.25);
+      assertClose(back.powerMult, 5);
+      const plain = decodePlan(encodePlan({ version: '1.2', entries: [{ targetItem: 'Desc_W_C', targetRate: 1 }] }));
+      assertClose(plain.costMult, 1);   // old/absent → default 1
+      assertClose(plain.powerMult, 1);
+    }],
+
     // --- factory roll-up (multiple lines) ---
     ['roll-up routes one line\'s output to another\'s input; sums totals', function () {
       // Line 0 makes Ingot (from Ore); line 1 makes Widget needing 5 Ingot externally.

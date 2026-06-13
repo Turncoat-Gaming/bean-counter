@@ -53,6 +53,11 @@ nginx box, a NAS share) by serving the files as-is.
   is made), and your picks travel in the bookmark.
 - **Alternate recipes** — the picker stays uncluttered (alternates hidden); when a
   recipe has alternates, a variant selector appears so you can switch between them.
+- **Game-mode multipliers** — two top-bar dropdowns model Satisfactory's *Advanced
+  Game Settings*: the **recipe cost** multiplier (0.25×–2×) scales every recipe's
+  inputs (solids round up to whole items, fluids stay exact), and the **power**
+  multiplier (0.25×–5×) scales every machine's draw. They apply globally — to both
+  drivers and the factory roll-up — and travel in the bookmark.
 - **Bookmarks** — every plan encodes into a short string that also lives in the
   URL. Copy the link (or the string) to save or share a plan; paste it to
   restore. Fully client-side, reversible, no server.

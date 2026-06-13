@@ -44,6 +44,10 @@
   // product and its recipes; the target rate is re-derived on restore, so `t` is
   // a (harmless) cache of the last sized value.
   // Back-compat: older bookmarks carry only `r`; decode derives the item from it.
+  //
+  // Plan-level (not per-line): the Advanced Game Settings global multipliers — `m`
+  // (recipe cost) and `w` (machine power). Both omitted at the default 1×, so
+  // existing bookmarks decode to 1× unchanged.
   function encodePlan(plan) {
     const wire = {
       v: plan.version,
@@ -57,6 +61,8 @@
         return o;
       }),
     };
+    if (plan.costMult && plan.costMult !== 1) wire.m = plan.costMult;
+    if (plan.powerMult && plan.powerMult !== 1) wire.w = plan.powerMult;
     return TAG + bytesToB64url(new TextEncoder().encode(JSON.stringify(wire)));
   }
 
@@ -70,6 +76,8 @@
     const wire = JSON.parse(json);
     return {
       version: wire.v,
+      costMult: wire.m || 1,
+      powerMult: wire.w || 1,
       entries: (wire.e || []).map((x) => ({
         targetItem: x.i, rootRecipe: x.r, targetRate: x.t,
         choiceKeys: x.c || [], recycleItems: x.y || [], providedItems: x.p || [],
